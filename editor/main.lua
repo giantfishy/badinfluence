@@ -1,3 +1,5 @@
+require("strong")
+
 function love.load()
 	font = love.graphics.newFont("monof55.ttf", 26)
 	love.graphics.setFont(font)
@@ -12,6 +14,7 @@ function love.load()
 	items = {"b","w","#"}
 	background = "backgrounds/temple.png"
 	selecteditem = 1
+	levelname = ""
 	newlevel(32,20,"backgrounds/temple.png")
 end
 
@@ -68,6 +71,7 @@ function love.draw()
 	end
 	if state == "save" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
+		love.graphics.print("save as:\n"..levelname,10,10)
 	end
 end
 
@@ -112,18 +116,52 @@ function savelevel(filename)
 		local string = ""
 		for b=1,levelwidth do
 			if level[a][b] ~= 0 then
-				string = string..level[b][a].."."
+				if b < levelwidth then
+					string = string..level[b][a].."."
+				else
+					string = string..level[b][a]
+				end
 			end
 		end
-		file:write(string.."\n")
+		if a < levelheight then
+			file:write(string.."\n")
+		else
+			file:write(string)
+		end
 	end
 	file:close()
 end
 
+function deletelastchar(string)
+	local result = ""
+	local list = {}
+	for s in string:chars() do
+		table.insert(list,s)
+	end
+	table.remove(list,#list)
+	for n=1,#list do
+		result = result..list[n]
+	end
+	return result
+end
+
 function love.keypressed(key)
+	if state == "save" then
+		if key == "delete" or key == "backspace" then
+			levelname = deletelastchar(levelname)
+		else
+			if key(2) == nil then
+				levelname = levelname..key
+			else
+				if key == "return" or key == "kpenter" then
+					savelevel(levelname)
+					state = "editing"
+				end
+			end
+		end
+	end
 	if key == "s" then
 		state = "save"
-		filename = ""
 	end
 	if key == "escape" then
 		love.event.push("q")
@@ -134,13 +172,6 @@ function love.mousepressed(x,y,button)
 	if button == "l" and state == "editing" and x > love.graphics.getWidth()-64 then
 		local buttonx = math.ceil((x-love.graphics.getWidth()+64)/32)
 		local buttony = math.ceil(y/32)
-		selecteditem = buttonx+buttony-1
-	end
-	if state = "save" then
-		if button ~= "delete" then
-			filename = filename..button
-		else
-			
-		end
+		selecteditem = buttonx+(2*buttony)-2
 	end
 end

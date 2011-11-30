@@ -1,7 +1,7 @@
 function love.conf(t)
     t.title = "Level Editor"
     t.author = "Lindwurm"
-    t.identity = "."
+    t.identity = "badinfluence"
     t.version = 0
     t.console = false
     t.release = false

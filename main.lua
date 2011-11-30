@@ -10,15 +10,18 @@ function love.load()
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
-	loadlevel("level3.txt")
+	loadlevel("level.txt")
 end
 
-function loadlevel(file)
+function loadlevel(filename)
 	level = {}
 	collisions = {}
 	spawnpoints = {}
+	local levelfile = love.filesystem.newFile(filename)
+	levelfile:open("r")
+	local contents = levelfile:read()
 	local a = 0
-	for line in love.filesystem.lines(file) do
+	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
 		else
@@ -100,7 +103,7 @@ function love.draw()
 		for a=1,levelwidth do
 			for b=1,levelheight do
 				if level[a][b] ~= 0 then
-					level[a][b]:setFilter("nearest", "nearest")
+					--level[a][b]:setFilter("nearest", "nearest")
 					love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
 				end
 			end
@@ -184,5 +187,8 @@ function love.keypressed(key)
 		if onblock(px+16+xspeed+4,py-16) then
 			xspeed = 0-speed
 		end
+	end
+	if key == "l" and love.keyboard.isDown("lshift") and gamestate == "playing" then
+		loadlevel("rooftops.txt")
 	end
 end
