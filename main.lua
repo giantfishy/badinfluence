@@ -7,10 +7,10 @@ function love.load()
 	spikes = love.graphics.newImage("spikes.png")
 	zoom = 2
 	speeds = {4,6,3}
-	characternames = {"fool","playboy","orphan","madman","liar","traveller","spy","psychopath","hitman","doctor","convict","alcoholic"}
+	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
-	loadlevel("level.txt")
+	loadlevel("level3.txt")
 end
 
 function loadlevel(file)
@@ -176,7 +176,7 @@ function love.keypressed(key)
 	if key == "z" and gamestate == "playing" then
 		gamestate = "choosecharacter"
 	end
-	if key == "w" and gamestate == "playing" and canjump == 1 then
+	if key == " " and gamestate == "playing" and canjump == 1 then
 		yspeed = 0 - jumpspeed
 		if onblock(px-16+xspeed-4,py-16) then
 			xspeed = speed

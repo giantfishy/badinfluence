@@ -1,11 +1,11 @@
 function love.conf(t)
-    t.title = "Currently Unnamed"
+    t.title = "Level Editor"
     t.author = "Lindwurm"
     t.identity = "."
     t.version = 0
     t.console = false
     t.release = false
-    t.screen.width = 1024        -- The window width (number)
+    t.screen.width = 1088        -- The window width (number)
     t.screen.height = 640       -- The window height (number)
     t.screen.fullscreen = false -- Enable fullscreen (boolean)
     t.screen.vsync = true       -- Enable vertical sync (boolean)
