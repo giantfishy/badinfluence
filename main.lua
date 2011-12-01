@@ -2,6 +2,7 @@ require("strong")
 
 function love.load()
 	love.graphics.setColor(0,40,0,150)
+	--love.graphics.setColor(255,255,255)
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
 	spikes = love.graphics.newImage("spikes.png")
@@ -10,7 +11,10 @@ function love.load()
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
-	loadlevel("level.txt")
+	font = love.graphics.newFont("london.ttf", 18)
+	love.graphics.setFont(font)
+	leveltoload = ""
+	gamestate = "mainmenu"
 end
 
 function loadlevel(filename)
@@ -95,6 +99,9 @@ function love.update(dt)
 end
 
 function love.draw()
+	if gamestate == "mainmenu" then
+		love.graphics.print("level to load:\n"..leveltoload,10,10)
+	end
 	if gamestate == "choosecharacter" then
 		love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
 	end
@@ -165,7 +172,40 @@ function changecharacter(newnum)
 	end
 end
 
+function deletelastchar(string)
+	local result = ""
+	local list = {}
+	for s in string:chars() do
+		table.insert(list,s)
+	end
+	table.remove(list,#list)
+	for n=1,#list do
+		result = result..list[n]
+	end
+	return result
+end
+
 function love.keypressed(key)
+	if gamestate == "mainmenu" then
+		if key == "delete" or key == "backspace" then
+			leveltoload = deletelastchar(leveltoload)
+		else
+			if key(2) == nil then
+				if love.keyboard.isDown("lshift","rshift") then
+					leveltoload = leveltoload..key:capitalize()
+				else
+					leveltoload = leveltoload..key
+				end
+			else
+				if key == "return" or key == "kpenter" then
+					if not leveltoload:endsWith(".txt") then
+						leveltoload = leveltoload..".txt"
+					end
+					loadlevel(leveltoload)
+				end
+			end
+		end
+	end
 	if key == "left" and gamestate == "choosecharacter" then
 		changecharacter(characternum - 1)
 	end
@@ -179,7 +219,7 @@ function love.keypressed(key)
 	if key == "z" and gamestate == "playing" then
 		gamestate = "choosecharacter"
 	end
-	if key == " " and gamestate == "playing" and canjump == 1 then
+	if key == "w" and gamestate == "playing" and canjump == 1 then
 		yspeed = 0 - jumpspeed
 		if onblock(px-16+xspeed-4,py-16) then
 			xspeed = speed
@@ -188,7 +228,8 @@ function love.keypressed(key)
 			xspeed = 0-speed
 		end
 	end
-	if key == "l" and love.keyboard.isDown("lshift") and gamestate == "playing" then
-		loadlevel("rooftops.txt")
+	if key == "escape" or key == "p" then
+		if gamestate == "playing" then gamestate = "paused" end
+		if gamestate == "paused" then gamestate = "playing" end
 	end
 end

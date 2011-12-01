@@ -1,7 +1,8 @@
 require("strong")
 
 function love.load()
-	font = love.graphics.newFont("monof55.ttf", 26)
+	font = love.graphics.newFont("london.ttf",22)
+	fontsmall = love.graphics.newFont("london.ttf",18)
 	love.graphics.setFont(font)
 	love.graphics.setColor(60,60,60,120)
 	love.graphics.setColorMode("replace")
@@ -15,6 +16,7 @@ function love.load()
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
+	messages = {}
 	newlevel(32,20,"backgrounds/temple.png")
 end
 
@@ -27,6 +29,14 @@ function love.update(dt)
 		end
 		if love.mouse.isDown("r") then
 			edit(math.ceil(mx/32),math.ceil(my/32)," ")
+		end
+	end
+	for n=1,#messages do
+		if n < #messages+1 then
+			messages[n][2] = messages[n][2]-1
+			if messages[n][2] < 1 then
+				table.remove(messages,n)
+			end
 		end
 	end
 end
@@ -73,6 +83,15 @@ function love.draw()
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.print("save as:\n"..levelname,10,10)
 	end
+	if state == "reallyquit?" then
+		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
+		love.graphics.print("really quit (y/n)?",10,10)
+	end
+	love.graphics.setFont(fontsmall)
+	for n=1,#messages do
+		love.graphics.print(messages[n][1],4,love.graphics.getHeight()-(16*n))
+	end
+	love.graphics.setFont(font)
 end
 
 function edit(x,y,entry)
@@ -145,16 +164,40 @@ function deletelastchar(string)
 	return result
 end
 
+function addmessage(string,time)
+	table.insert(messages,{string,time})
+end
+
 function love.keypressed(key)
 	if state == "save" then
 		if key == "delete" or key == "backspace" then
 			levelname = deletelastchar(levelname)
 		else
 			if key(2) == nil then
-				levelname = levelname..key
+				if love.keyboard.isDown("lshift","rshift") then
+					levelname = levelname..key:capitalize()
+				else
+					levelname = levelname..key
+				end
 			else
 				if key == "return" or key == "kpenter" then
-					savelevel(levelname)
+					local hasSpawnPoints = false
+					for a=1,levelwidth do
+						for b=1,levelheight do
+							if level[a][b] == "#" then
+								hasSpawnPoints = true
+							end
+						end
+					end
+					if hasSpawnPoints then
+						if not levelname:endsWith(".txt") then
+							levelname = levelname..".txt"
+						end
+						savelevel(levelname)
+						addmessage("level saved.",100)
+					else
+						addmessage("can not save level without spawn points",200)
+					end
 					state = "editing"
 				end
 			end
@@ -163,8 +206,17 @@ function love.keypressed(key)
 	if key == "s" then
 		state = "save"
 	end
+	if state == "reallyquit?" then
+		if key == "y" then love.event.push('q') end
+		if key == "n" then state = "editing" end
+	end
 	if key == "escape" then
-		love.event.push("q")
+		if state == "editing" then
+			state = "reallyquit?"
+		end
+		if state == "save" then
+			state = "editing"
+		end
 	end
 end
 
