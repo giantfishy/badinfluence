@@ -24,12 +24,16 @@ function love.update(dt)
 	mx = love.mouse.getX()
 	my = love.mouse.getY()
 	if state == "editing" then
-		if love.mouse.isDown("l") then
-			edit(math.ceil(mx/32),math.ceil(my/32),items[selecteditem])
+		if love.mouse.isDown("l") and (mx+vx)/32 > 0 and (my+vy)/32 > 0 then
+			edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32),items[selecteditem])
 		end
-		if love.mouse.isDown("r") then
-			edit(math.ceil(mx/32),math.ceil(my/32)," ")
+		if love.mouse.isDown("r") and (mx+vx)/32 > 0 and (my+vy)/32 > 0 then
+			edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32)," ")
 		end
+		if love.keyboard.isDown("up") then vy = vy - 3 end
+		if love.keyboard.isDown("left") then vx = vx - 3 end
+		if love.keyboard.isDown("down") then vy = vy + 3 end
+		if love.keyboard.isDown("right") then vx = vx + 3 end
 	end
 	for n=1,#messages do
 		if n < #messages+1 then
@@ -43,6 +47,20 @@ end
 
 function love.draw()
 	love.graphics.draw(bgimage,0,0)
+	for a=1,levelwidth do
+		for b=1,levelheight do
+			love.graphics.draw(gridsquare,(a-1)*32-vx,(b-1)*32-vy)
+			if level[a][b] == "b" then
+				love.graphics.draw(rockwall,(a-1)*32-vx,(b-1)*32-vy)
+			end
+			if level[a][b] == "w" then
+				love.graphics.draw(spikes,(a-1)*32-vx,(b-1)*32-vy)
+			end
+			if level[a][b] == "#" then
+				love.graphics.draw(spawnpoint,(a-1)*32-vx,(b-1)*32-vy)
+			end
+		end
+	end
 	love.graphics.draw(sidebar,love.graphics.getWidth()-64,0)
 	for n=1,# items do
 		local buttonx = 0
@@ -63,20 +81,6 @@ function love.draw()
 		end
 		if n == selecteditem then
 			love.graphics.draw(selected,buttonx,buttony)
-		end
-	end
-	for a=1,levelwidth do
-		for b=1,levelheight do
-			love.graphics.draw(gridsquare,(a-1)*32,(b-1)*32)
-			if level[a][b] == "b" then
-				love.graphics.draw(rockwall,(a-1)*32,(b-1)*32)
-			end
-			if level[a][b] == "w" then
-				love.graphics.draw(spikes,(a-1)*32,(b-1)*32)
-			end
-			if level[a][b] == "#" then
-				love.graphics.draw(spawnpoint,(a-1)*32,(b-1)*32)
-			end
 		end
 	end
 	if state == "save" then
@@ -111,6 +115,8 @@ function newlevel(width,height,bg)
 	background = bg
 	bgimage = love.graphics.newImage(bg)
 	changelevelbounds(width,height)
+	vx = 0
+	vy = 0
 end
 
 function changelevelbounds(newwidth,newheight)
@@ -239,8 +245,12 @@ function love.keypressed(key)
 		fields = {"","",""}
 		fieldnum = 1
 	end
-	if key == "s" then
+	if key == "s" and state == "editing" then
 		state = "save"
+	end
+	if key == " " and state == "editing" then
+		vx = 0
+		vy = 0
 	end
 	if state == "reallyquit?" then
 		if key == "y" then love.event.push('q') end

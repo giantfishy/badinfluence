@@ -24,6 +24,7 @@ end
 function loadlevel(filename)
 	level = {}
 	collisions = {}
+	properties = {}
 	spawnpoints = {}
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
@@ -39,17 +40,32 @@ function loadlevel(filename)
 		end
 		a = a + 1
 	end
-	levelwidth = # level
-	levelheight = # level[1]
+	levelwidth = #level
+	levelheight = #level[1]
 	for a=1,levelwidth do
 		collisions[a] = {}
+		properties[a] = {}
 		for b=1,levelheight do
 			collisions[a][b] = "empty"
 			if level[a][b] == "b" then
 				level[a][b] = rockwall
 				collisions[a][b] = "block"
 			end
-			if level[a][b] == "w" then level[a][b] = spikes end
+			if level[a][b] == "w" then 
+				level[a][b] = spikes
+				properties[a][b] = 0
+				if a > 1 and a < levelwidth and b > 1 and b < levelheight then
+					if level[a-1][b] == rockwall then properties[a][b] = 180 end
+					if level[a][b-1] == rockwall then properties[a][b] = 90 end
+					if level[a][b+1] == "b" then properties[a][b] = 270 end
+					if level[a+1][b] == "b" then properties[a][b] = 0 end
+				else
+					if a == 1 then properties[a][b] = 180 end
+					if b == 1 then properties[a][b] = 90 end
+					if b == levelheight then properties[a][b] = 270 end
+					if a == levelwidth then properties[a][b] = 0 end
+				end
+			end
 			if level[a][b] == " " then level[a][b] = 0 end
 			if level[a][b] == "#" then
 				table.insert(spawnpoints,{b,a})
@@ -61,6 +77,8 @@ function loadlevel(filename)
 end
 
 function love.update(dt)
+	mx = love.mouse.getX()
+	my = love.mouse.getY()
 	if gamestate == "playing" then
 		getInput()
 		move()
@@ -76,7 +94,7 @@ function getInput()
 	if love.keyboard.isDown(leftkey) and xspeed > 0-speed then
 		xspeed = xspeed - 1
 	end
-	if not love.keyboard.isDown(leftkey,rightkey) then
+	if not love.keyboard.isDown(leftkey,rightkey) or (love.keyboard.isDown(leftkey) and love.keyboard.isDown(rightkey)) then
 		xspeed = 0
 	end
 	if jumping and (onblock(px-3,py) ~= "empty" or onblock(px-3,py+playerHeight) ~= "empty") and onblock(px,py+playerHeight+1) == "empty" and onblock(px+playerWidth,py+playerHeight+1) == "empty" then
@@ -92,13 +110,13 @@ function getInput()
 		yspeed = jumpspeed
 	end
 	if not love.keyboard.isDown(jumpkey) and yspeed < 0 then
-		yspeed = yspeed/6 --ratio may need adjusting
+		yspeed = yspeed/6
 	end
 	jumping = false
 end
 
 function move()
-	if xspeed > 0 then --going right
+	if xspeed > 0 then
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" then
 			px = px + xspeed
 		else
@@ -116,7 +134,7 @@ function move()
 			xspeed = 0
 		end
 	end
-	if xspeed < 0 then --going left
+	if xspeed < 0 then
 		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" then
 			px = px + xspeed
 		else
@@ -162,10 +180,14 @@ end
 function viewport(x,y)
 	vx = x
 	vy = y
-	if vx > levelwidth*32-love.graphics.getWidth() then vx = levelwidth*32-love.graphics.getWidth() end
-	if vy > levelheight*32-love.graphics.getHeight() then vy = levelheight*32-love.graphics.getHeight() end
+	if vx > levelwidth*32-love.graphics.getWidth()/2 then vx = levelwidth*32-love.graphics.getWidth()/2 end
+	if vy > levelheight*32-love.graphics.getHeight()/2 then vy = levelheight*32-love.graphics.getHeight()/2 end
 	if vx < love.graphics.getWidth()/2 then vx = love.graphics.getWidth()/2 end
 	if vy < love.graphics.getHeight()/2 then vy = love.graphics.getHeight()/2 end
+end
+
+function toRadians(num)
+	return num*(math.pi/180)
 end
 
 function love.draw()
@@ -181,7 +203,11 @@ function love.draw()
 			for b=1,levelheight do
 				if level[a][b] ~= 0 then
 					level[a][b]:setFilter("nearest", "nearest")
-					love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
+					if level[a][b] == spikes then
+						love.graphics.draw(spikes,(b-1)*32-vx+512+16,(a-1)*32-vy+320+16,toRadians(properties[a][b]),1,1,16,16)
+					else
+						love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
+					end
 				end
 			end
 		end
@@ -214,8 +240,9 @@ function changecharacter(newnum)
 		speed = speed + 0.5
 	end
 	math.randomseed(os.time())
+	math.random();math.random();math.random()
 	local n = math.random(1,#spawnpoints)
-	px = (spawnpoints[n][1])*32+1
+	px = (spawnpoints[n][1])*32-29
 	py = (spawnpoints[n][2])*32-60
 	vx = x
 	vy = y
