@@ -83,6 +83,10 @@ function love.draw()
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.print("save as:\n"..levelname,10,10)
 	end
+	if state == "new" then
+		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
+		love.graphics.print("level bounds:\n"..fields[1].."x"..fields[2].."\nbackground image:"..fields[3],10,10)
+	end
 	if state == "reallyquit?" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.print("really quit (y/n)?",10,10)
@@ -202,6 +206,38 @@ function love.keypressed(key)
 				end
 			end
 		end
+	end
+	if state == "new" then
+		if key == "delete" or key == "backspace" then
+			fields[fieldnum] = deletelastchar(fields[fieldnum])
+		else
+			if key(2) == nil and (tonumber(key) or fieldnum == 3) then
+				if love.keyboard.isDown("lshift","rshift") then
+					fields[fieldnum] = fields[fieldnum]..key:capitalize()
+				else
+					fields[fieldnum] = fields[fieldnum]..key
+				end
+			else
+				if key == "return" or key == "kpenter" then
+					fieldnum = fieldnum + 1
+					if fieldnum > 3 then
+						if not fields[3]:endsWith(".png") then
+							fields[3] = fields[3]..".png"
+						end
+						if not fields[3]:startsWith("backgrounds/") then
+							fields[3] = "backgrounds/"..fields[3]
+						end
+						newlevel(tonumber(fields[1]),tonumber(fields[2]),fields[3])
+						state = "editing"
+					end
+				end
+			end
+		end
+	end
+	if key == "n" and state == "editing" then
+		state = "new"
+		fields = {"","",""}
+		fieldnum = 1
 	end
 	if key == "s" then
 		state = "save"

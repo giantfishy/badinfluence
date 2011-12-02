@@ -1,13 +1,16 @@
 require("strong")
 
 function love.load()
-	love.graphics.setColor(0,40,0,150)
-	--love.graphics.setColor(255,255,255)
+	love.graphics.setColor(70,70,70,100)
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
 	spikes = love.graphics.newImage("spikes.png")
 	zoom = 2
-	speeds = {4,6,3}
+	speeds = {6,8,4}
+	jumpspeed = 8
+	leftkey = "left"
+	rightkey = "right"
+	jumpkey = " "
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
@@ -59,29 +62,50 @@ end
 function love.update(dt)
 	if gamestate == "playing" then
 		canjump = 0
-		if love.keyboard.isDown("a") then
+		if love.keyboard.isDown(leftkey) then
 			xspeed = xspeed - 0.4
 			if xspeed < 0 - speed then
 				xspeed = 0 - speed
 			end
 		end
-		if love.keyboard.isDown("d") then
+		if love.keyboard.isDown(rightkey) then
 			xspeed = xspeed + 0.4
 			if xspeed > speed then
 				xspeed = speed
 			end
 		end
-		yspeed = yspeed + 0.2
+		yspeed = yspeed + 0.3
 		for n=1,2 do
 			if n == 1 then px = px + 3 end
 			if n == 2 then px = px - 6 end
-			if playeronblock("down") or playeronblock("up") or playeronblock("left") or playeronblock("right") then
+			if playeronblock("down") or playeronblock("left") or playeronblock("right") then
 				canjump = 1
 			end
 			if n == 2 then px = px + 3
 			end
 		end
-		if playeronblock("left") or playeronblock("right") or not (love.keyboard.isDown("a") or love.keyboard.isDown("d")) or (love.keyboard.isDown("a") and love.keyboard.isDown("d")) then
+		if love.keyboard.isDown(jumpkey) then
+			if canjump == 1 then
+				yspeed = 0 - jumpspeed
+				if onblock(px-16+xspeed-4,py-16) then
+					if love.keyboard.isDown(leftkey) then
+						xspeed = speed/2
+					elseif love.keyboard.isDown(rightkey) then
+						xspeed = speed*2
+					end
+					yspeed = 0-jumpspeed-1
+				end
+				if onblock(px+16+xspeed+4,py-16) then
+					if love.keyboard.isDown(leftkey) then
+						xspeed = 0-speed*2
+					elseif love.keyboard.isDown(rightkey) then
+						xspeed = 0-speed/2
+					end
+					yspeed = 0-jumpspeed-1
+				end
+			end
+		end
+		if playeronblock("left") or playeronblock("right") or not (love.keyboard.isDown(leftkey) or love.keyboard.isDown(rightkey)) or (love.keyboard.isDown(leftkey) and love.keyboard.isDown(rightkey)) then
 			xspeed = 0
 		end
 		if playeronblock("down") or playeronblock("up") then
@@ -105,12 +129,12 @@ function love.draw()
 	if gamestate == "choosecharacter" then
 		love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
 	end
-	if gamestate == "playing" then
+	if gamestate == "playing" or gamestate == "paused" then
 		love.graphics.draw(background,0,0)
 		for a=1,levelwidth do
 			for b=1,levelheight do
 				if level[a][b] ~= 0 then
-					--level[a][b]:setFilter("nearest", "nearest")
+					level[a][b]:setFilter("nearest", "nearest")
 					love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
 				end
 			end
@@ -118,12 +142,20 @@ function love.draw()
 		love.graphics.rectangle("fill",px-16-vx+512,py-16-vy+320,32,32)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
 	end
+	if gamestate == "paused" then
+		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
+		love.graphics.printf("PAUSED",0,love.graphics.getHeight()/2,love.graphics.getWidth(),"center")
+	end
 end
 
 function onblock(x,y)
 	local xcell = math.ceil(y/32)
 	local ycell = math.ceil(x/32)
-	return collisions[xcell][ycell] == 1
+	if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
+		return collisions[xcell][ycell] == 1
+	else
+		return 1
+	end
 end
 
 function playeronblock(direction)
@@ -150,10 +182,10 @@ function changecharacter(newnum)
 	if characternames[characternum] == "doctor" then
 		speed = speed + 0.5
 	end
-	jumpspeed = 8
 	math.randomseed(os.time())
-	px = (spawnpoints[math.random(# spawnpoints)][1])*32-16
-	py = (spawnpoints[math.random(# spawnpoints)][2])*32-16
+	local n = math.random(#spawnpoints)
+	px = (spawnpoints[n][1])*32-16
+	py = (spawnpoints[n][2])*32-16
 	vx = x
 	vy = y
 	xspeed = 0
@@ -219,17 +251,26 @@ function love.keypressed(key)
 	if key == "z" and gamestate == "playing" then
 		gamestate = "choosecharacter"
 	end
-	if key == "w" and gamestate == "playing" and canjump == 1 then
-		yspeed = 0 - jumpspeed
-		if onblock(px-16+xspeed-4,py-16) then
-			xspeed = speed
-		end
-		if onblock(px+16+xspeed+4,py-16) then
-			xspeed = 0-speed
+	--if key == jumpkey and gamestate == "playing" and canjump == 1 then
+	--	yspeed = 0 - jumpspeed
+	--	if onblock(px-16+xspeed-4,py-16) then
+	--		xspeed = speed
+	--	end
+	--	if onblock(px+16+xspeed+4,py-16) then
+	--		xspeed = 0-speed
+	--	end
+	--end
+	if key == "escape" or key == "p" then
+		if gamestate == "playing" then
+			gamestate = "paused"
+		elseif gamestate == "paused" then
+			gamestate = "playing"
 		end
 	end
-	if key == "escape" or key == "p" then
-		if gamestate == "playing" then gamestate = "paused" end
-		if gamestate == "paused" then gamestate = "playing" end
+end
+
+function love.keyreleased(key)
+	if key == jumpkey and yspeed then
+		yspeed = math.abs(yspeed)/6
 	end
 end
