@@ -4,6 +4,7 @@ function love.load()
 	love.graphics.setColor(70,70,70,100)
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
+	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	spikes = love.graphics.newImage("spikes.png")
 	zoom = 2
 	speeds = {6,8,4}
@@ -60,10 +61,30 @@ function loadlevel(filename)
 					if level[a][b+1] == "b" then properties[a][b] = 270 end
 					if level[a+1][b] == "b" then properties[a][b] = 0 end
 				else
-					if a == 1 then properties[a][b] = 180 end
-					if b == 1 then properties[a][b] = 90 end
-					if b == levelheight then properties[a][b] = 270 end
-					if a == levelwidth then properties[a][b] = 0 end
+					if a == 1 and not (b == 1 or b == levelheight) then
+						properties[a][b] = 180
+						if level[a][b-1] == rockwall then properties[a][b] = 90 end
+						if level[a][b+1] == "b" then properties[a][b] = 270 end
+						if level[a+1][b] == "b" then properties[a][b] = 0 end
+					end
+					if b == 1 and not (a == 1 or a == levelwidth) then
+						properties[a][b] = 90
+						if level[a-1][b] == rockwall then properties[a][b] = 180 end
+						if level[a][b+1] == "b" then properties[a][b] = 270 end
+						if level[a+1][b] == "b" then properties[a][b] = 0 end
+					end
+					if b == levelheight and not (a == 1 or a == levelwidth) then
+						properties[a][b] = 270
+						if level[a-1][b] == rockwall then properties[a][b] = 180 end
+						if level[a][b-1] == rockwall then properties[a][b] = 90 end
+						if level[a+1][b] == "b" then properties[a][b] = 0 end
+					end
+					if a == levelwidth and not (b == 1 or b == levelheight) then
+						properties[a][b] = 0
+						if level[a-1][b] == rockwall then properties[a][b] = 180 end
+						if level[a][b-1] == rockwall then properties[a][b] = 90 end
+						if level[a][b+1] == "b" then properties[a][b] = 270 end
+					end
 				end
 			end
 			if level[a][b] == " " then level[a][b] = 0 end
@@ -71,6 +92,7 @@ function loadlevel(filename)
 				table.insert(spawnpoints,{b,a})
 				level[a][b] = 0
 			end
+			if level[a][b] == "-" then level[a][b] = rockwallbg end
 		end
 	end
 	gamestate = "choosecharacter"
@@ -98,12 +120,12 @@ function getInput()
 		xspeed = 0
 	end
 	if jumping and (onblock(px-3,py) ~= "empty" or onblock(px-3,py+playerHeight) ~= "empty") and onblock(px,py+playerHeight+1) == "empty" and onblock(px+playerWidth,py+playerHeight+1) == "empty" then
-		xspeed = speed+3
-		yspeed = jumpspeed-1
+		xspeed = speed+1
+		yspeed = jumpspeed-2
 	end
 	if jumping and (onblock(px+playerWidth+3,py) ~= "empty" or onblock(px+playerWidth+3,py+playerHeight) ~= "empty") and onblock(px,py+playerHeight+1) == "empty" and onblock(px+playerWidth,py+playerHeight+1) == "empty" then
-		xspeed = 0-speed-3
-		yspeed = jumpspeed-1
+		xspeed = 0-speed-1
+		yspeed = jumpspeed-2
 	end
 	if jumping and (onblock(px, py + playerHeight+1) ~= "empty" or onblock(px + playerWidth, py + playerHeight+1) ~= "empty") then
 		py = py - 2
@@ -117,7 +139,7 @@ end
 
 function move()
 	if xspeed > 0 then
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" then
+		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" and onblock(px+playerWidth+xspeed,py+playerHeight/2) then
 			px = px + xspeed
 		else
 			xspeed = 0
@@ -135,7 +157,7 @@ function move()
 		end
 	end
 	if xspeed < 0 then
-		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" then
+		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" and onblock(px+xspeed,py+playerHeight/2) then
 			px = px + xspeed
 		else
 			xspeed = 0
@@ -165,6 +187,11 @@ function manifestGravity()
 		if onblock(px, py + playerHeight + yspeed) == "empty" and onblock(px + playerWidth, py + playerHeight + yspeed) == "empty" then 
 			py = py + yspeed
 		else
+			local distance = 1
+			while onblock(px,py+playerHeight+distance) == "empty" and onblock(px+playerWidth,py+playerHeight+distance) == "empty" do
+				distance = distance + 1
+			end
+			py = py + distance-1
 			yspeed = 0
 		end
 	end
@@ -180,8 +207,8 @@ end
 function viewport(x,y)
 	vx = x
 	vy = y
-	if vx > levelwidth*32-love.graphics.getWidth()/2 then vx = levelwidth*32-love.graphics.getWidth()/2 end
-	if vy > levelheight*32-love.graphics.getHeight()/2 then vy = levelheight*32-love.graphics.getHeight()/2 end
+	if vx > levelheight*32-love.graphics.getWidth()/2 then vx = levelheight*32-love.graphics.getWidth()/2 end
+	if vy > levelwidth*32-love.graphics.getHeight()/2 then vy = levelwidth*32-love.graphics.getHeight()/2 end
 	if vx < love.graphics.getWidth()/2 then vx = love.graphics.getWidth()/2 end
 	if vy < love.graphics.getHeight()/2 then vy = love.graphics.getHeight()/2 end
 end
@@ -212,7 +239,7 @@ function love.draw()
 			end
 		end
 		love.graphics.rectangle("fill",px-vx+512,py-vy+320,playerWidth,playerHeight)
-		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
+		--love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype].."\nlevelbounds: "..levelwidth.."x"..levelheight,0,0)
 	end
 	if gamestate == "paused" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -246,7 +273,7 @@ function changecharacter(newnum)
 	py = (spawnpoints[n][2])*32-60
 	vx = x
 	vy = y
-	gravity = 0.4
+	gravity = 0.35
 	xspeed = 0
 	yspeed = 0
 	playerWidth = 30
@@ -282,7 +309,11 @@ function love.keypressed(key)
 					if not leveltoload:endsWith(".txt") then
 						leveltoload = leveltoload..".txt"
 					end
-					loadlevel(leveltoload)
+					if love.filesystem.exists(leveltoload) then
+						loadlevel(leveltoload)
+					else
+						leveltoload = "level.txt"
+					end
 				end
 			end
 		end
