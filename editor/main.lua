@@ -105,8 +105,15 @@ function love.draw()
 		love.graphics.print("load:\n"..levelname,10,10)
 	end
 	if state == "new" then
+		placeholders[fieldnum] = "__"
+		if fields[fieldnum](1) then
+			placeholders[fieldnum] = fields[fieldnum].."_"
+		end
+		if fields[fieldnum](2) then
+			placeholders[fieldnum] = fields[fieldnum]
+		end
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
-		love.graphics.print("level bounds:\n"..fields[1].."x"..fields[2].."\nbackground image:"..fields[3],10,10)
+		love.graphics.print("level bounds:\n"..placeholders[1].."x"..placeholders[2].."\nbackground image:"..fields[3],10,10)
 	end
 	if state == "reallyquit?" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -293,6 +300,7 @@ function love.keypressed(key)
 			else
 				if key == "return" or key == "kpenter" then
 					fieldnum = fieldnum + 1
+					placeholders[fieldnum-1] = fields[fieldnum-1]
 					if fieldnum > 3 then
 						if not fields[3]:endsWith(".png") then
 							fields[3] = fields[3]..".png"
@@ -311,6 +319,7 @@ function love.keypressed(key)
 		state = "new"
 		fields = {"","",""}
 		fieldnum = 1
+		placeholders = {"__","__"}
 	end
 	if key == "s" and state == "editing" then
 		state = "save"

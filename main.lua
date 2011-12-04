@@ -143,6 +143,10 @@ function move()
 			px = px + xspeed
 		else
 			xspeed = 0
+			if love.keyboard.isDown(rightkey) then
+				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2 then yspeed = 0-gravity end
+			end
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
 			px = px + xspeed
@@ -161,6 +165,10 @@ function move()
 			px = px + xspeed
 		else
 			xspeed = 0
+			if love.keyboard.isDown(leftkey) then
+				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2 then yspeed = 0-gravity end
+			end
 		end
 		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
 			px = px + xspeed
