@@ -13,7 +13,7 @@ function love.load()
 	rockwall = love.graphics.newImage("rockwall.png")
 	spikes = love.graphics.newImage("spikes.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
-	items = {"b","w","#","-"}
+	items = {"b","-","w","#"}
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
@@ -50,20 +50,22 @@ end
 
 function love.draw()
 	love.graphics.draw(bgimage,0,0)
-	for a=1,levelwidth do
-		for b=1,levelheight do
-			love.graphics.draw(gridsquare,(a-1)*32-vx,(b-1)*32-vy)
-			if level[a][b] == "b" then
-				love.graphics.draw(rockwall,(a-1)*32-vx,(b-1)*32-vy)
-			end
-			if level[a][b] == "w" then
-				love.graphics.draw(spikes,(a-1)*32-vx,(b-1)*32-vy)
-			end
-			if level[a][b] == "#" then
-				love.graphics.draw(spawnpoint,(a-1)*32-vx,(b-1)*32-vy)
-			end
-			if level[a][b] == "-" then
-				love.graphics.draw(rockwallbg,(a-1)*32-vx,(b-1)*32-vy)
+	for a=math.floor(vx/32),math.ceil((vx+love.graphics.getWidth()-64)/32) do
+		for b=math.floor(vy/32),math.ceil((vy+love.graphics.getHeight())/32) do
+			if a > 0 and a < levelwidth+1 and b > 0 and b < levelheight+1 then
+				love.graphics.draw(gridsquare,(a-1)*32-vx,(b-1)*32-vy)
+				if level[a][b] == "b" then
+					love.graphics.draw(rockwall,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == "w" then
+					love.graphics.draw(spikes,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == "#" then
+					love.graphics.draw(spawnpoint,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == "-" then
+					love.graphics.draw(rockwallbg,(a-1)*32-vx,(b-1)*32-vy)
+				end
 			end
 		end
 	end

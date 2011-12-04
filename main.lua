@@ -13,6 +13,7 @@ function love.load()
 	leftkey = "a"
 	rightkey = "d"
 	jumpkey = "w"
+	downkey = "s"
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
@@ -145,7 +146,7 @@ function move()
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 then yspeed = 0-gravity end
+				if charactertype == 2 and not love.keyboard.isDown(downkey) then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
@@ -167,7 +168,7 @@ function move()
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 then yspeed = 0-gravity end
+				if charactertype == 2 and not love.keyboard.isDown(downkey) then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
@@ -234,14 +235,16 @@ function love.draw()
 	end
 	if gamestate == "playing" or gamestate == "paused" then
 		love.graphics.draw(background,0,0)
-		for a=1,levelwidth do
-			for b=1,levelheight do
-				if level[a][b] ~= 0 then
-					level[a][b]:setFilter("nearest", "nearest")
-					if level[a][b] == spikes then
-						love.graphics.draw(spikes,(b-1)*32-vx+512+16,(a-1)*32-vy+320+16,toRadians(properties[a][b]),1,1,16,16)
-					else
-						love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
+		for a=math.floor((vy-love.graphics.getHeight()/2)/32),math.ceil((vy+love.graphics.getHeight()/2)/32) do
+			for b=math.floor((vx-love.graphics.getWidth()/2)/32),math.ceil((vx+love.graphics.getWidth()/2)/32) do
+				if a > 0 and a < levelwidth+1 and b > 0 and b < levelheight+1 then
+					if level[a][b] ~= 0 then
+						level[a][b]:setFilter("nearest", "nearest")
+						if level[a][b] == spikes then
+							love.graphics.draw(spikes,(b-1)*32-vx+512+16,(a-1)*32-vy+320+16,toRadians(properties[a][b]),1,1,16,16)
+						else
+							love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
+						end
 					end
 				end
 			end
