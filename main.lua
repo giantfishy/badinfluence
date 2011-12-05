@@ -6,6 +6,7 @@ function love.load()
 	rockwall = love.graphics.newImage("rockwall.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	spikes = love.graphics.newImage("spikes.png")
+	playboy = love.graphics.newImage("characters/playboy.png")
 	zoom = 2
 	speeds = {6,8,4}
 	jumpspeed = -10
@@ -13,13 +14,13 @@ function love.load()
 	leftkey = "a"
 	rightkey = "d"
 	jumpkey = "w"
-	downkey = "s"
+	usekey = "lshift"
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("london.ttf", 18)
 	love.graphics.setFont(font)
-	leveltoload = ""
+	leveltoload = 1
 	gamestate = "mainmenu"
 end
 
@@ -99,6 +100,17 @@ function loadlevel(filename)
 	gamestate = "choosecharacter"
 end
 
+function getlevels()
+	local files = love.filesystem.enumerate("")
+	local levels = {}
+	for n=1,#files do
+		if tostring(files[n]):endsWith(".txt") then
+			table.insert(levels,tostring(files[n])-".txt")
+		end
+	end
+	return levels
+end
+
 function love.update(dt)
 	mx = love.mouse.getX()
 	my = love.mouse.getY()
@@ -107,6 +119,11 @@ function love.update(dt)
 		move()
 		manifestGravity()
 		viewport(px,py)
+	end
+	if gamestate == "mainmenu" then
+		if my > 40 and my < 30+#getlevels()*18 then
+			leveltoload = math.floor((my-22)/18)
+		end
 	end
 end
 
@@ -145,8 +162,8 @@ function move()
 		else
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
-				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 and not love.keyboard.isDown(downkey) then yspeed = 0-gravity end
+				if charactertype ~= 3 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2 and love.keyboard.isDown(usekey) then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
@@ -167,8 +184,8 @@ function move()
 		else
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
-				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 and not love.keyboard.isDown(downkey) then yspeed = 0-gravity end
+				if charactertype ~= 3 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2 and love.keyboard.isDown(usekey) then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
@@ -182,6 +199,17 @@ function move()
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
 			xspeed = 0
 		end
+	end
+	if invincibletimer > -1 then invincibletimer = invincibletimer - 1 end
+	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py+2) == spikes) and invincibletimer < 0 then
+		health = health - 100
+		setinvincible(60)
+	end
+	if levelat(px+playerWidth/2,py+playerHeight/2) == "offlevel" or health < 1 then
+		changecharacter(characternum)
+	end
+	if charactertype == 3 and health < maxhealth then
+		health = health + 0.4
 	end
 end
 
@@ -228,7 +256,13 @@ end
 
 function love.draw()
 	if gamestate == "mainmenu" then
-		love.graphics.print("level to load:\n"..leveltoload,10,10)
+		love.graphics.print("pick a level:",2,2)
+		love.graphics.setColor(50,50,50)
+		love.graphics.rectangle("fill",0,22+leveltoload*18,200,18)
+		love.graphics.setColor(70,70,70,100)
+		for a=1,#getlevels() do
+			love.graphics.print(getlevels()[a],2,22+a*18)
+		end
 	end
 	if gamestate == "choosecharacter" then
 		love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
@@ -249,8 +283,20 @@ function love.draw()
 				end
 			end
 		end
-		love.graphics.rectangle("fill",px-vx+512,py-vy+320,playerWidth,playerHeight)
-		--love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype].."\nlevelbounds: "..levelwidth.."x"..levelheight,0,0)
+		local flash = math.floor(invincibletimer/6)
+		if invincibletimer < 0 or flash/3 == math.floor(flash/3) then
+			love.graphics.draw(playboy,px-1-vx+512,py-4-vy+320)
+		end
+		love.graphics.setColor(0,0,0)
+		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,playerWidth,4)
+		love.graphics.setColor(250,150,50)
+		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,health/maxhealth*playerWidth,4)
+		if invincibletimer > 0 then
+			love.graphics.setColor(255,255,100,100)
+			love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,invincibletimer/invincible*(playerWidth+2),6)
+		end
+		love.graphics.setColor(70,70,70,100)
+		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
 	end
 	if gamestate == "paused" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -268,6 +314,21 @@ function onblock(x,y)
 	end
 end
 
+function levelat(x,y)
+	local xcell = math.ceil(y/32)
+	local ycell = math.ceil(x/32)
+	if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
+		return level[xcell][ycell]
+	else
+		return "offlevel"
+	end
+end
+
+function setinvincible(time)
+	invincibletimer = time
+	invincible = time
+end
+
 function changecharacter(newnum)
 	if newnum > 12 then newnum = 1 end
 	if newnum < 1 then newnum = 12 end
@@ -275,7 +336,7 @@ function changecharacter(newnum)
 	charactertype = math.ceil(characternum/4)
 	speed = speeds[charactertype]
 	if characternames[characternum] == "doctor" then
-		speed = speed + 0.5
+		speed = speed + 1
 	end
 	math.randomseed(os.time())
 	math.random();math.random();math.random()
@@ -289,6 +350,11 @@ function changecharacter(newnum)
 	yspeed = 0
 	playerWidth = 30
 	playerHeight = 60
+	if charactertype == 1 then maxhealth = 100 end
+	if charactertype == 2 then maxhealth = 50 end
+	if charactertype == 3 then maxhealth = 150 end
+	health = maxhealth
+	setinvincible(100)
 end
 
 function deletelastchar(string)
@@ -305,30 +371,6 @@ function deletelastchar(string)
 end
 
 function love.keypressed(key)
-	if gamestate == "mainmenu" then
-		if key == "delete" or key == "backspace" then
-			leveltoload = deletelastchar(leveltoload)
-		else
-			if key(2) == nil then
-				if love.keyboard.isDown("lshift","rshift") then
-					leveltoload = leveltoload..key:capitalize()
-				else
-					leveltoload = leveltoload..key
-				end
-			else
-				if key == "return" or key == "kpenter" then
-					if not leveltoload:endsWith(".txt") then
-						leveltoload = leveltoload..".txt"
-					end
-					if love.filesystem.exists(leveltoload) then
-						loadlevel(leveltoload)
-					else
-						leveltoload = "level.txt"
-					end
-				end
-			end
-		end
-	end
 	if key == "left" and gamestate == "choosecharacter" then
 		changecharacter(characternum - 1)
 	end
@@ -354,5 +396,12 @@ function love.keypressed(key)
 		elseif gamestate == "paused" then
 			gamestate = "playing"
 		end
+	end
+end
+
+function love.mousepressed(button,x,y)
+	if gamestate == "mainmenu" then
+		local levelfile = getlevels()[leveltoload]..".txt"
+		loadlevel(levelfile)
 	end
 end

@@ -170,7 +170,7 @@ function savelevel(filename)
 	for a=1,levelheight do
 		local string = ""
 		for b=1,levelwidth do
-			if level[a][b] ~= 0 then
+			if level[b][a] ~= 0 then
 				if b < levelwidth then
 					string = string..level[b][a].."."
 				else
