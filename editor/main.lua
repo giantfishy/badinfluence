@@ -13,7 +13,7 @@ function love.load()
 	rockwall = love.graphics.newImage("rockwall.png")
 	spikes = love.graphics.newImage("spikes.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
-	items = {"b","-","w","#"}
+	items = {"b"," b","w","#"}
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
@@ -26,10 +26,14 @@ function love.update(dt)
 	my = love.mouse.getY()
 	if state == "editing" then
 		if love.mouse.isDown("l") and (mx+vx)/32 > 0 and (my+vy)/32 > 0 and mx < love.graphics.getWidth()-64 then
-			edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32),items[selecteditem])
+			if items[selecteditem](2) then
+				edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32),items[selecteditem](2),"obj")
+			else
+				edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32),items[selecteditem],"lvl")
+			end
 		end
 		if love.mouse.isDown("r") and (mx+vx)/32 > 0 and (my+vy)/32 > 0 then
-			edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32)," ")
+			edit(math.ceil((mx+vx)/32),math.ceil((my+vy)/32)," ","both")
 		end
 		local speed = 4
 		if love.keyboard.isDown("lshift","rshift") then speed = 7 end
@@ -53,7 +57,10 @@ function love.draw()
 	for a=math.floor(vx/32),math.ceil((vx+love.graphics.getWidth()-64)/32) do
 		for b=math.floor(vy/32),math.ceil((vy+love.graphics.getHeight())/32) do
 			if a > 0 and a < levelwidth+1 and b > 0 and b < levelheight+1 then
-				love.graphics.draw(gridsquare,(a-1)*32-vx,(b-1)*32-vy)
+				if grid then love.graphics.draw(gridsquare,(a-1)*32-vx,(b-1)*32-vy) end
+				if objects[a][b] == "b" then
+					love.graphics.draw(rockwallbg,(a-1)*32-vx,(b-1)*32-vy)
+				end
 				if level[a][b] == "b" then
 					love.graphics.draw(rockwall,(a-1)*32-vx,(b-1)*32-vy)
 				end
@@ -63,15 +70,14 @@ function love.draw()
 				if level[a][b] == "#" then
 					love.graphics.draw(spawnpoint,(a-1)*32-vx,(b-1)*32-vy)
 				end
-				if level[a][b] == "-" then
-					love.graphics.draw(rockwallbg,(a-1)*32-vx,(b-1)*32-vy)
-				end
 			end
 		end
 	end
 	love.graphics.setColor(255,0,0)
-	love.graphics.line(levelwidth*16-vx,0-vy, levelwidth*16-vx,levelheight*32-vy)
-	love.graphics.line(0-vx,levelheight*16-vy, levelwidth*32-vx,levelheight*16-vy)
+	if grid then
+		love.graphics.line(levelwidth*16-vx,0-vy, levelwidth*16-vx,levelheight*32-vy)
+		love.graphics.line(0-vx,levelheight*16-vy, levelwidth*32-vx,levelheight*16-vy)
+	end
 	love.graphics.setColor(60,60,60,120)
 	love.graphics.draw(sidebar,love.graphics.getWidth()-64,0)
 	for n=1,# items do
@@ -91,7 +97,7 @@ function love.draw()
 		if items[n] == "#" then
 			love.graphics.draw(spawnpoint,buttonx,buttony)
 		end
-		if items[n] == "-" then
+		if items[n] == " b" then
 			love.graphics.draw(rockwallbg,buttonx,buttony)
 		end
 		if n == selecteditem then
@@ -128,9 +134,10 @@ function love.draw()
 	love.graphics.setFont(font)
 end
 
-function edit(x,y,entry)
+function edit(x,y,entry,layer)
 	if x < levelwidth+1 and y < levelheight+1 then
-		level[x][y] = entry
+		if layer == "lvl" or layer == "both" then level[x][y] = entry end
+		if layer == "obj" or layer == "both" then objects[x][y] = entry end
 	end
 end
 
@@ -138,23 +145,30 @@ function newlevel(width,height,bg)
 	levelwidth = 0
 	levelheight = 0
 	level = {}
+	objects = {}
 	background = bg
 	bgimage = love.graphics.newImage(bg)
 	changelevelbounds(width,height)
 	vx = 0
 	vy = 0
+	grid = true
 end
 
 function changelevelbounds(newwidth,newheight)
 	local levelbackup = level
+	local objbackup = objects
 	level = {}
+	objects = {}
 	for a=1,newwidth do
 		level[a] = {}
-		for b=1, newheight do
+		objects[a] = {}
+		for b=1,newheight do
 			if a < levelwidth+1 and b < levelheight+1 then
 				level[a][b] = levelbackup[a][b]
+				objects[a][b] = objbackup[a][b]
 			else
 				level[a][b] = " "
+				objects[a][b] = " "
 			end
 		end
 	end
@@ -172,9 +186,9 @@ function savelevel(filename)
 		for b=1,levelwidth do
 			if level[b][a] ~= 0 then
 				if b < levelwidth then
-					string = string..level[b][a].."."
+					string = string..level[b][a]..objects[b][a].."."
 				else
-					string = string..level[b][a]
+					string = string..level[b][a]..objects[b][a]
 				end
 			end
 		end
@@ -202,6 +216,7 @@ end
 
 function loadlevel(filename)
 	level = {}
+	objects = {}
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
@@ -209,6 +224,15 @@ function loadlevel(filename)
 	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
+			objects[a] = {}
+			for b=1,#level[a] do
+				if level[a][b](2) then
+					objects[a][b] = level[a][b](2)
+					level[a][b] = level[a][b](1)
+				else
+					objects[a][b] = " "
+				end
+			end
 		else
 			if a == 0 then
 				background = line
@@ -219,11 +243,15 @@ function loadlevel(filename)
 	levelwidth = #level[1]
 	levelheight = #level
 	local oldlevel = level
+	local oldobj = objects
 	level = {}
+	objects = {}
 	for a=1,levelwidth do
 		level[a] = {}
+		objects[a] = {}
 		for b=1,levelheight do
 			level[a][b] = oldlevel[b][a]
+			objects[a][b] = oldobj[b][a]
 		end
 	end
 end
@@ -333,6 +361,9 @@ function love.keypressed(key)
 		vx = 0
 		vy = 0
 	end
+	if key == "g" and state == "editing" then
+		grid = not grid
+	end
 	if state == "reallyquit?" then
 		if key == "y" then love.event.push('q') end
 		if key == "n" then state = "editing" end
@@ -344,6 +375,9 @@ function love.keypressed(key)
 		if state == "save" or state == "load" or state == "new" then
 			state = "editing"
 		end
+	end
+	if key == "j" then
+		addmessage(level[math.ceil((mx+vx)/32)][math.ceil((my+vy)/32)]..","..objects[math.ceil((mx+vx)/32)][math.ceil((my+vy)/32)],100)
 	end
 end
 

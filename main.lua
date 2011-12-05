@@ -26,6 +26,7 @@ end
 
 function loadlevel(filename)
 	level = {}
+	objects = {}
 	collisions = {}
 	properties = {}
 	spawnpoints = {}
@@ -36,6 +37,15 @@ function loadlevel(filename)
 	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
+			objects[a] = {}
+			for b=1,#level[a] do
+				if level[a][b](2) then
+					objects[a][b] = level[a][b](2)
+					level[a][b] = level[a][b](1)
+				else
+					objects[a][b] = " "
+				end
+			end
 		else
 			if a == 0 then
 				background = love.graphics.newImage(line)
@@ -94,7 +104,8 @@ function loadlevel(filename)
 				table.insert(spawnpoints,{b,a})
 				level[a][b] = 0
 			end
-			if level[a][b] == "-" then level[a][b] = rockwallbg end
+			if objects[a][b] == "b" then objects[a][b] = rockwallbg end
+			if objects[a][b] == " " then objects[a][b] = 0 end
 		end
 	end
 	gamestate = "choosecharacter"
@@ -162,8 +173,8 @@ function move()
 		else
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
-				if charactertype ~= 3 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 and love.keyboard.isDown(usekey) then yspeed = 0-gravity end
+				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2  then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
@@ -184,8 +195,8 @@ function move()
 		else
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
-				if charactertype ~= 3 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 and love.keyboard.isDown(usekey) then yspeed = 0-gravity end
+				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
+				if charactertype == 2 then yspeed = 0-gravity end
 			end
 		end
 		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
@@ -201,8 +212,8 @@ function move()
 		end
 	end
 	if invincibletimer > -1 then invincibletimer = invincibletimer - 1 end
-	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py+2) == spikes) and invincibletimer < 0 then
-		health = health - 100
+	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py-2) == spikes) and invincibletimer < 0 then
+		health = health - 200
 		setinvincible(60)
 	end
 	if levelat(px+playerWidth/2,py+playerHeight/2) == "offlevel" or health < 1 then
@@ -272,6 +283,7 @@ function love.draw()
 		for a=math.floor((vy-love.graphics.getHeight()/2)/32),math.ceil((vy+love.graphics.getHeight()/2)/32) do
 			for b=math.floor((vx-love.graphics.getWidth()/2)/32),math.ceil((vx+love.graphics.getWidth()/2)/32) do
 				if a > 0 and a < levelwidth+1 and b > 0 and b < levelheight+1 then
+					if objects[a][b] == rockwallbg then love.graphics.draw(rockwallbg,(b-1)*32-vx+512,(a-1)*32-vy+320) end
 					if level[a][b] ~= 0 then
 						level[a][b]:setFilter("nearest", "nearest")
 						if level[a][b] == spikes then
@@ -279,6 +291,10 @@ function love.draw()
 						else
 							love.graphics.draw(level[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
 						end
+					end
+					if objects[a][b] ~= 0 and objects[a][b] ~= rockwallbg then
+						objects[a][b]:setFilter("nearest","nearest")
+						love.graphics.draw(objects[a][b],(b-1)*32-vx+512,(a-1)*32-vy+320)
 					end
 				end
 			end
@@ -291,10 +307,10 @@ function love.draw()
 		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,playerWidth,4)
 		love.graphics.setColor(250,150,50)
 		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,health/maxhealth*playerWidth,4)
-		if invincibletimer > 0 then
-			love.graphics.setColor(255,255,100,100)
-			love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,invincibletimer/invincible*(playerWidth+2),6)
-		end
+		--if invincibletimer > 0 then
+		--	love.graphics.setColor(255,255,100,100)
+		--	love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,invincibletimer/invincible*(playerWidth+2),6)
+		--end
 		love.graphics.setColor(70,70,70,100)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
 	end
@@ -320,7 +336,11 @@ function levelat(x,y)
 	if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
 		return level[xcell][ycell]
 	else
-		return "offlevel"
+		if xcell > levelwidth then
+			return "offlevel"
+		else
+			return "offscreen"
+		end
 	end
 end
 
