@@ -17,6 +17,7 @@ function love.load()
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
+	levelnum = 1
 	messages = {}
 	newlevel(32,20,"backgrounds/temple.png")
 end
@@ -41,6 +42,11 @@ function love.update(dt)
 		if love.keyboard.isDown("left") then vx = vx - speed end
 		if love.keyboard.isDown("down") then vy = vy + speed end
 		if love.keyboard.isDown("right") then vx = vx + speed end
+	end
+	if state == "load" then
+		if my > 40 and my < 30+#getlevels()*18 then
+			levelnum = math.floor((my-22)/18)
+		end
 	end
 	for n=1,#messages do
 		if n < #messages+1 then
@@ -110,7 +116,15 @@ function love.draw()
 	end
 	if state == "load" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
-		love.graphics.print("load:\n"..levelname,10,10)
+		love.graphics.setFont(fontsmall)
+		love.graphics.print("pick a level:",2,2)
+		love.graphics.setColor(30,30,30)
+		love.graphics.rectangle("fill",0,22+levelnum*18,200,18)
+		love.graphics.setColor(60,60,60,120)
+		for a=1,#getlevels() do
+			love.graphics.print(getlevels()[a],2,22+a*18)
+		end
+		love.graphics.setFont(font)
 	end
 	if state == "new" then
 		placeholders[fieldnum] = "__"
@@ -214,6 +228,17 @@ function deletelastchar(string)
 	return result
 end
 
+function getlevels()
+	local files = love.filesystem.enumerate("")
+	local levels = {}
+	for n=1,#files do
+		if tostring(files[n]):endsWith(".txt") then
+			table.insert(levels,tostring(files[n])-".txt")
+		end
+	end
+	return levels
+end
+
 function loadlevel(filename)
 	level = {}
 	objects = {}
@@ -295,28 +320,6 @@ function love.keypressed(key)
 			end
 		end
 	end
-	if state == "load" then
-		if key == "delete" or key == "backspace" then
-			levelname = deletelastchar(levelname)
-		else
-			if key(2) == nil then
-				if love.keyboard.isDown("lshift","rshift") then
-					levelname = levelname..key:capitalize()
-				else
-					levelname = levelname..key
-				end
-			else
-				if key == "return" or key == "kpenter" then
-					if not levelname:endsWith(".txt") then
-						levelname = levelname..".txt"
-					end
-					loadlevel(levelname)
-					addmessage("level loaded.",100)
-					state = "editing"
-				end
-			end
-		end
-	end
 	if state == "new" then
 		if key == "delete" or key == "backspace" then
 			fields[fieldnum] = deletelastchar(fields[fieldnum])
@@ -386,5 +389,10 @@ function love.mousepressed(x,y,button)
 		local buttonx = math.ceil((x-love.graphics.getWidth()+64)/32)
 		local buttony = math.ceil(y/32)
 		selecteditem = buttonx+(2*buttony)-2
+	end
+	if state == "load" and button == "l" then
+		local levelfile = getlevels()[levelnum]..".txt"
+		loadlevel(levelfile)
+		state = "editing"
 	end
 end

@@ -7,6 +7,7 @@ function love.load()
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	spikes = love.graphics.newImage("spikes.png")
 	playboy = love.graphics.newImage("characters/playboy.png")
+	click = love.audio.newSource("click.ogg", "static")
 	zoom = 2
 	speeds = {6,8,4}
 	jumpspeed = -10
@@ -132,9 +133,17 @@ function love.update(dt)
 		viewport(px,py)
 	end
 	if gamestate == "mainmenu" then
+		local previouslevel = leveltoload
 		if my > 40 and my < 30+#getlevels()*18 then
 			leveltoload = math.floor((my-22)/18)
+		else
+			if my < 41 then
+				leveltoload = 1
+			else
+				leveltoload = #getlevels()
+			end
 		end
+		if previouslevel ~= leveltoload then love.audio.play(click) end
 	end
 end
 
@@ -212,7 +221,7 @@ function move()
 		end
 	end
 	if invincibletimer > -1 then invincibletimer = invincibletimer - 1 end
-	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py-2) == spikes) and invincibletimer < 0 then
+	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py+4) == spikes) and invincibletimer < 0 then
 		health = health - 200
 		setinvincible(60)
 	end
@@ -300,7 +309,7 @@ function love.draw()
 			end
 		end
 		local flash = math.floor(invincibletimer/6)
-		if invincibletimer < 0 or flash/3 == math.floor(flash/3) then
+		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
 			love.graphics.draw(playboy,px-1-vx+512,py-4-vy+320)
 		end
 		love.graphics.setColor(0,0,0)
@@ -419,8 +428,8 @@ function love.keypressed(key)
 	end
 end
 
-function love.mousepressed(button,x,y)
-	if gamestate == "mainmenu" then
+function love.mousepressed(x,y,button)
+	if gamestate == "mainmenu" and button == "l" then
 		local levelfile = getlevels()[leveltoload]..".txt"
 		loadlevel(levelfile)
 	end
