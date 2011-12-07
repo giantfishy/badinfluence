@@ -279,6 +279,7 @@ function loadlevel(filename)
 			objects[a][b] = oldobj[b][a]
 		end
 	end
+	bgimage = love.graphics.newImage(background)
 end
 
 function addmessage(string,time)

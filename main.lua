@@ -7,7 +7,11 @@ function love.load()
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	spikes = love.graphics.newImage("spikes.png")
 	playboy = love.graphics.newImage("characters/playboy.png")
+	frame = 1
+	animationlengths = {1,6,3,3}
 	click = love.audio.newSource("click.ogg", "static")
+	vx = 0
+	vy = 0
 	zoom = 2
 	speeds = {6,8,4}
 	jumpspeed = -10
@@ -128,9 +132,8 @@ function love.update(dt)
 	my = love.mouse.getY()
 	if gamestate == "playing" then
 		getInput()
-		move()
+		move(dt)
 		manifestGravity()
-		viewport(px,py)
 	end
 	if gamestate == "mainmenu" then
 		local previouslevel = leveltoload
@@ -148,6 +151,7 @@ function love.update(dt)
 end
 
 function getInput()
+	animation = 1
 	if love.keyboard.isDown(rightkey) and xspeed < speed then
 		xspeed = xspeed + 1
 	end
@@ -175,13 +179,16 @@ function getInput()
 	jumping = false
 end
 
-function move()
+function move(dt)
+	animation = 1
 	if xspeed > 0 then
+		animation = 2
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" and onblock(px+playerWidth+xspeed,py+playerHeight/2) then
 			px = px + xspeed
 		else
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
+				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2  then yspeed = 0-gravity end
 			end
@@ -199,11 +206,13 @@ function move()
 		end
 	end
 	if xspeed < 0 then
+		animation = 2
 		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" and onblock(px+xspeed,py+playerHeight/2) then
 			px = px + xspeed
 		else
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
+				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2 then yspeed = 0-gravity end
 			end
@@ -217,9 +226,11 @@ function move()
 			py = py - xspeed
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
+			animation = 1
 			xspeed = 0
 		end
 	end
+	if yspeed ~= 0 then animation = 3 end
 	if invincibletimer > -1 then invincibletimer = invincibletimer - 1 end
 	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py+4) == spikes) and invincibletimer < 0 then
 		health = health - 200
@@ -230,6 +241,22 @@ function move()
 	end
 	if charactertype == 3 and health < maxhealth then
 		health = health + 0.4
+	end
+	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)direction = "right"
+	viewport(px,py)
+	if mx < px+(playerWidth/2)-1-vx+512 then direction = "left" end
+	local framedelay = 0.1
+	if animation == 2 then framedelay = 0.6/math.abs(xspeed) end
+	if animation == 4 then framedelay = 0.6/math.abs(yspeed) end
+	if (direction == "left" and love.keyboard.isDown(rightkey)) or (direction == "right" and love.keyboard.isDown(leftkey)) then
+		framedelay = framedelay * -1
+	end
+	frame = (frame + dt/framedelay)
+	if frame > animationlengths[animation]+1 then
+		frame = 1
+	end
+	if frame < 1 then
+		frame = animationlengths[animation]
 	end
 end
 
@@ -308,9 +335,11 @@ function love.draw()
 				end
 			end
 		end
+		local flip = 1
+		if direction == "left" then flip = -1 end
 		local flash = math.floor(invincibletimer/6)
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
-			love.graphics.draw(playboy,px-1-vx+512,py-4-vy+320)
+			love.graphics.drawq(playboy,playerquad,px-1-vx+528,py-4-vy+320,0,flip,1,16)
 		end
 		love.graphics.setColor(0,0,0)
 		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,playerWidth,4)
@@ -377,6 +406,7 @@ function changecharacter(newnum)
 	gravity = 0.35
 	xspeed = 0
 	yspeed = 0
+	direction = "right"
 	playerWidth = 30
 	playerHeight = 60
 	if charactertype == 1 then maxhealth = 100 end
