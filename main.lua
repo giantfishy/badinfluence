@@ -8,6 +8,7 @@ function love.load()
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	spikes = love.graphics.newImage("spikes.png")
 	playboy = love.graphics.newImage("characters/playboy.png")
+	playboyarm = love.graphics.newImage("characters/arms/playboy.png")
 	frame = 1
 	animationlengths = {1,6,3,3}
 	click = love.audio.newSource("click.ogg", "static")
@@ -354,6 +355,7 @@ function love.draw()
 		local flash = math.floor(invincibletimer/6)
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
 			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
+			love.graphics.draw(playboyarm,math.floor(px+5-vx+512),math.floor(py+11-vy+320),math.random(8),flip,5,2)
 		end
 		love.graphics.setColor(0,0,0)
 		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),playerWidth,4)
