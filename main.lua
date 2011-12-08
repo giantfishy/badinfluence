@@ -1,6 +1,7 @@
 require("strong")
 
 function love.load()
+	love.graphics.setBackgroundColor(40,40,40)
 	love.graphics.setColor(70,70,70,100)
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
@@ -134,6 +135,7 @@ function love.update(dt)
 		getInput()
 		move(dt)
 		manifestGravity()
+		viewport(px,py)
 	end
 	if gamestate == "mainmenu" then
 		local previouslevel = leveltoload
@@ -183,14 +185,20 @@ function move(dt)
 	animation = 1
 	if xspeed > 0 then
 		animation = 2
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" and onblock(px+playerWidth+xspeed,py+playerHeight/2) then
+		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" and onblock(px+playerWidth+xspeed,py+playerHeight/2) == "empty" then
 			px = px + xspeed
 		else
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2  then yspeed = 0-gravity end
+				if charactertype == 2 then 
+					if onblock(px+playerWidth+2,py+playerHeight) ~= "empty" and onblock(px+playerWidth+2,py) ~= "empty" then 
+						yspeed = 0-gravity 
+					else
+						if yspeed > 2.5 then yspeed = 2.5 end
+					end
+				end
 			end
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
@@ -207,14 +215,20 @@ function move(dt)
 	end
 	if xspeed < 0 then
 		animation = 2
-		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" and onblock(px+xspeed,py+playerHeight/2) then
+		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" and onblock(px+xspeed,py+playerHeight/2) == "empty" then
 			px = px + xspeed
 		else
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
-				if charactertype == 2 then yspeed = 0-gravity end
+				if charactertype == 2 then 
+					if onblock(px-2,py+playerHeight) ~= "empty" and onblock(px-2,py) ~= "empty" then 
+						yspeed = 0-gravity 
+					else
+						if yspeed > 2.5 then yspeed = 2.5 end
+					end
+				end
 			end
 		end
 		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
@@ -289,8 +303,8 @@ function manifestGravity()
 end
 
 function viewport(x,y)
-	vx = x
-	vy = y
+	vx = math.floor(x)
+	vy = math.floor(y)
 	if vx > levelheight*32-love.graphics.getWidth()/2 then vx = levelheight*32-love.graphics.getWidth()/2 end
 	if vy > levelwidth*32-love.graphics.getHeight()/2 then vy = levelwidth*32-love.graphics.getHeight()/2 end
 	if vx < love.graphics.getWidth()/2 then vx = love.graphics.getWidth()/2 end
@@ -339,12 +353,12 @@ function love.draw()
 		if direction == "left" then flip = -1 end
 		local flash = math.floor(invincibletimer/6)
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
-			love.graphics.drawq(playboy,playerquad,px-1-vx+528,py-4-vy+320,0,flip,1,16)
+			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
 		end
 		love.graphics.setColor(0,0,0)
-		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,playerWidth,4)
+		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),playerWidth,4)
 		love.graphics.setColor(250,150,50)
-		love.graphics.rectangle("fill",px-vx+512,py-8-vy+320,health/maxhealth*playerWidth,4)
+		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),health/maxhealth*playerWidth,4)
 		--if invincibletimer > 0 then
 		--	love.graphics.setColor(255,255,100,100)
 		--	love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,invincibletimer/invincible*(playerWidth+2),6)

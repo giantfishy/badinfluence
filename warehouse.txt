@@ -1,0 +1,33 @@
+backgrounds/trees.png
+  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b. b. b.  .  .  .  .  .  .  .  . b. b. b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b.  .  . b. b.  .  .  .  . b. b.  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b.  .  .  .  . b. b. b. b.  .  .  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b.  .  . b. b.  .  .  .  . b. b.  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b. b. b.  .  .  .  .  .  .  .  . b. b. b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+b .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .b 
+ b.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . b
+ b.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . b
+ b.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . b
+b .b . b. b. b.wb.b .b .b .b .wb. b. b.wb.b .b .b .b .wb. b. b.wb.b .b .b .b .wb. b. b. b.b .b 
+b .b . b. b. b.wb.b .b .b .b .wb. b. b.wb.b .b .b .b .wb. b. b.wb.b .b .b .b .wb. b. b. b.b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .w .wb.wb.w .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b . b. b. b. b.wb.bb.bb.wb. b. b. b. b. b. b. b. b. b. b. b. b.wb.bb.bb.wb. b. b. b. b.b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  .bb.bb.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b . b. b. b. b. b.bb.bb. b. b. b. b. b. b. b. b. b. b. b. b. b. b.bb.bb. b. b. b. b. b.b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .w .bb.bb.w .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b .  .  .  .  .  . b. b.  .  .  .  .  .w .bb.bb.w .  .  .  .  .  . b. b.  .  .  .  .  .b .b 
+b .b . b.wb.wb. b.#b.#b.#b.#b. b. b. b. b. b.bb.bb. b. b. b. b. b.#b.#b.#b.#b. b.wb.wb. b.b .b 
+b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b 
+b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b .b 

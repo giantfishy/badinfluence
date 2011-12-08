@@ -46,6 +46,12 @@ function love.update(dt)
 	if state == "load" then
 		if my > 40 and my < 30+#getlevels()*18 then
 			levelnum = math.floor((my-22)/18)
+		else
+			if my < 41 then
+				levelnum = 1
+			else
+				levelnum = #getlevels()
+			end
 		end
 	end
 	for n=1,#messages do
