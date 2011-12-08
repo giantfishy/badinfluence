@@ -353,9 +353,15 @@ function love.draw()
 		local flip = 1
 		if direction == "left" then flip = -1 end
 		local flash = math.floor(invincibletimer/6)
+		local armangle = 0
+		if direction == "right" then
+			armangle = math.atan((my-py)/(mx-px))-math.pi/2
+		else
+			armangle = math.atan((my-py)/(mx-px))+math.pi/2
+		end
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
 			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
-			love.graphics.draw(playboyarm,math.floor(px+5-vx+512),math.floor(py+11-vy+320),math.random(8),flip,5,2)
+			love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),math.floor(armangle),flip,1,5,2)
 		end
 		love.graphics.setColor(0,0,0)
 		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),playerWidth,4)
