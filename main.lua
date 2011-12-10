@@ -122,7 +122,7 @@ function loadlevel(filename)
 end
 
 function getlevels()
-	local files = love.filesystem.enumerate("")
+	local files = love.filesystem.enumerate("levels/")
 	local levels = {}
 	for n=1,#files do
 		if tostring(files[n]):endsWith(".txt") then
@@ -489,7 +489,7 @@ end
 
 function love.mousepressed(x,y,button)
 	if gamestate == "mainmenu" and button == "l" then
-		local levelfile = getlevels()[leveltoload]..".txt"
+		local levelfile = "levels/"..getlevels()[leveltoload]..".txt"
 		loadlevel(levelfile)
 	end
 end
