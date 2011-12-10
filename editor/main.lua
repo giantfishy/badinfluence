@@ -253,7 +253,7 @@ function loadlevel(filename)
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
-	local a = 1
+	local a = -1
 	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
