@@ -141,7 +141,7 @@ function love.draw()
 			placeholders[fieldnum] = fields[fieldnum]
 		end
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
-		love.graphics.print("level bounds:\n"..placeholders[1].."x"..placeholders[2].."\nbackground image:"..fields[3],10,10)
+		love.graphics.print("level bounds:\n"..placeholders[1].."x"..placeholders[2].."\nbackground image:"..placeholders[3].."\nwraparound? (true/false) "..placeholders[4],10,10)
 	end
 	if state == "reallyquit?" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -161,7 +161,7 @@ function edit(x,y,entry,layer)
 	end
 end
 
-function newlevel(width,height,bg)
+function newlevel(width,height,bg,wraparound)
 	levelwidth = 0
 	levelheight = 0
 	level = {}
@@ -172,7 +172,7 @@ function newlevel(width,height,bg)
 	vx = 0
 	vy = 0
 	grid = true
-	wrap = false
+	wrap = wraparound
 end
 
 function changelevelbounds(newwidth,newheight)
@@ -255,6 +255,7 @@ function loadlevel(filename)
 	local contents = levelfile:read()
 	local a = -1
 	for line in contents:lines("\n") do
+		line = line - "\r"
 		if a > 0 then
 			level[a] = line / "."
 			objects[a] = {}
@@ -336,7 +337,7 @@ function love.keypressed(key)
 		if key == "delete" or key == "backspace" then
 			fields[fieldnum] = deletelastchar(fields[fieldnum])
 		else
-			if key(2) == nil and (tonumber(key) or fieldnum == 3) then
+			if key(2) == nil and (tonumber(key) or fieldnum > 2) then
 				if love.keyboard.isDown("lshift","rshift") then
 					fields[fieldnum] = fields[fieldnum]..key:capitalize()
 				else
@@ -346,7 +347,7 @@ function love.keypressed(key)
 				if key == "return" or key == "kpenter" then
 					fieldnum = fieldnum + 1
 					placeholders[fieldnum-1] = fields[fieldnum-1]
-					if fieldnum > 3 then
+					if fieldnum > 4 then
 						if not fields[3]:endsWith(".png") then
 							fields[3] = fields[3]..".png"
 						end
@@ -362,9 +363,9 @@ function love.keypressed(key)
 	end
 	if key == "n" and state == "editing" then
 		state = "new"
-		fields = {"","",""}
+		fields = {"","","",""}
 		fieldnum = 1
-		placeholders = {"__","__"}
+		placeholders = {"__","__","__","__"}
 	end
 	if key == "s" and state == "editing" then
 		state = "save"

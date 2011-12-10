@@ -10,8 +10,8 @@ function love.load()
 	playboy = love.graphics.newImage("characters/playboy.png")
 	playboyarm = love.graphics.newImage("characters/arms/playboy.png")
 	frame = 1
-	animationlengths = {1,6,3,3}
-	click = love.audio.newSource("click.ogg", "static")
+	animationlengths = {1,6,4,4}
+	click = love.audio.newSource("sounds/click.ogg", "static")
 	vx = 0
 	vy = 0
 	zoom = 2
@@ -25,7 +25,7 @@ function love.load()
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
-	font = love.graphics.newFont("london.ttf", 18)
+	font = love.graphics.newFont("fonts/london.ttf", 18)
 	love.graphics.setFont(font)
 	leveltoload = 1
 	gamestate = "mainmenu"
@@ -42,6 +42,7 @@ function loadlevel(filename)
 	local contents = levelfile:read()
 	local a = -1
 	for line in contents:lines("\n") do
+		line = line - "\r"
 		if a > 0 then
 			level[a] = line / "."
 			objects[a] = {}
@@ -109,6 +110,14 @@ function loadlevel(filename)
 					end
 				end
 			end
+			if level[a][b] == "<" then
+				level[a][b] = 0
+				collisions[a][b] = "slopeRight"
+			end
+			if level[a][b] == ">" then
+				level[a][b] = 0
+				collisions[a][b] = "slopeLeft"
+			end
 			if level[a][b] == " " then level[a][b] = 0 end
 			if level[a][b] == "#" then
 				table.insert(spawnpoints,{b,a})
@@ -123,10 +132,16 @@ end
 
 function getlevels()
 	local files = love.filesystem.enumerate("levels/")
+	local otherfiles = love.filesystem.enumerate("")
 	local levels = {}
 	for n=1,#files do
 		if tostring(files[n]):endsWith(".txt") then
-			table.insert(levels,tostring(files[n])-".txt")
+			table.insert(levels,"levels/"..tostring(files[n])-".txt")
+		end
+	end
+	for n=1,#otherfiles do
+		if tostring(otherfiles[n]):endsWith(".txt") then
+			table.insert(levels,tostring(otherfiles[n])-".txt")
 		end
 	end
 	return levels
@@ -189,7 +204,7 @@ function move(dt)
 	animation = 1
 	if xspeed > 0 then
 		animation = 2
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "empty" and onblock(px+playerWidth+xspeed,py) == "empty" and onblock(px+playerWidth+xspeed,py+playerHeight/2) == "empty" then
+		if onblock(px + playerWidth + xspeed, py + playerHeight) ~= "block" and onblock(px+playerWidth+xspeed,py) ~= "block" and onblock(px+playerWidth+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
 		else
 			xspeed = 0
@@ -197,7 +212,7 @@ function move(dt)
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2 then 
-					if onblock(px+playerWidth+2,py+playerHeight) ~= "empty" and onblock(px+playerWidth+2,py) ~= "empty" then 
+					if onblock(px+playerWidth+2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then 
 						yspeed = 0-gravity 
 					else
 						if yspeed > 2.5 then yspeed = 2.5 end
@@ -214,12 +229,13 @@ function move(dt)
 			py = py - xspeed
 		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
+			animation = 1
 			xspeed = 0
 		end
 	end
 	if xspeed < 0 then
 		animation = 2
-		if onblock(px + xspeed, py + playerHeight) == "empty" and onblock(px+xspeed,py) == "empty" and onblock(px+xspeed,py+playerHeight/2) == "empty" then
+		if onblock(px + xspeed, py + playerHeight) ~= "block" and onblock(px+xspeed,py) ~= "block" and onblock(px+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
 		else
 			xspeed = 0
@@ -227,7 +243,7 @@ function move(dt)
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2 then 
-					if onblock(px-2,py+playerHeight) ~= "empty" and onblock(px-2,py) ~= "empty" then 
+					if onblock(px-2,py+playerHeight) == "block" and onblock(px-2,py) == "block" then 
 						yspeed = 0-gravity 
 					else
 						if yspeed > 2.5 then yspeed = 2.5 end
@@ -248,11 +264,26 @@ function move(dt)
 			xspeed = 0
 		end
 	end
-	if yspeed ~= 0 then animation = 3 end
+	if yspeed ~= 0 and animation ~= 4 then animation = 3 end
 	if invincibletimer > -1 then invincibletimer = invincibletimer - 1 end
 	if (levelat(px+playerWidth/2,py+playerHeight-4) == spikes or levelat(px+playerWidth/2,py+4) == spikes) and invincibletimer < 0 then
 		health = health - 200
 		setinvincible(60)
+	end
+	if levelat(px+playerWidth/2,py+playerHeight/2) == "offscreen" and wrap then
+		if px < 0-playerWidth/2 then px = levelheight*32-playerWidth/2 end
+		if px > levelheight*32-playerWidth/2 then px = 0-playerWidth/2 end
+	end
+	drawmirror = false
+	if levelat(px,py) == "offscreen" then
+		drawmirror = true
+		mirrorx = levelheight*32+px
+		mirrory = py
+	end
+	if levelat(px+playerWidth,py) == "offscreen" then
+		drawmirror = true
+		mirrorx = px-levelheight*32
+		mirrory = py
 	end
 	if levelat(px+playerWidth/2,py+playerHeight/2) == "offlevel" or health < 1 then
 		changecharacter(characternum)
@@ -260,37 +291,40 @@ function move(dt)
 	if charactertype == 3 and health < maxhealth then
 		health = health + 0.4
 	end
-	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)direction = "right"
+	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)
 	viewport(px,py)
+	direction = "right"
 	if mx < px+(playerWidth/2)-1-vx+512 then direction = "left" end
 	local framedelay = 0.1
 	if animation == 2 then framedelay = 0.6/math.abs(xspeed) end
-	if animation == 4 then framedelay = 0.6/math.abs(yspeed) end
-	if (direction == "left" and love.keyboard.isDown(rightkey)) or (direction == "right" and love.keyboard.isDown(leftkey)) then
+	if animation == 3 then framedelay = 1.6/(0-yspeed) end
+	if ((direction == "left" and love.keyboard.isDown(rightkey)) or (direction == "right" and love.keyboard.isDown(leftkey))) and animation == 2 then
 		framedelay = framedelay * -1
 	end
 	frame = (frame + dt/framedelay)
 	if frame > animationlengths[animation]+1 then
 		frame = 1
+		if animation == 3 then frame = 4 end
 	end
 	if frame < 1 then
 		frame = animationlengths[animation]
+		if animation == 3 then frame = 1 end
 	end
 end
 
 function manifestGravity()
-	if onblock(px, py + playerHeight+1) ~= "empty" and onblock(px + playerWidth, py + playerHeight+1) ~= "empty" then
+	if onblock(px, py + playerHeight+1) == "block" and onblock(px + playerWidth, py + playerHeight+1) == "block" then
 		yspeed = 0
 	else
 		yspeed = yspeed + gravity
 	end
 	if yspeed > 8 then yspeed = 8 end
 	if yspeed > 0 then
-		if onblock(px, py + playerHeight + yspeed) == "empty" and onblock(px + playerWidth, py + playerHeight + yspeed) == "empty" then 
+		if onblock(px, py + playerHeight + yspeed) ~= "block" and onblock(px + playerWidth, py + playerHeight + yspeed) ~= "block" then 
 			py = py + yspeed
 		else
 			local distance = 1
-			while onblock(px,py+playerHeight+distance) == "empty" and onblock(px+playerWidth,py+playerHeight+distance) == "empty" do
+			while onblock(px,py+playerHeight+distance) ~= "block" and onblock(px+playerWidth,py+playerHeight+distance) ~= "block" do
 				distance = distance + 1
 			end
 			py = py + distance-1
@@ -326,7 +360,11 @@ function love.draw()
 		love.graphics.rectangle("fill",0,22+leveltoload*18,200,18)
 		love.graphics.setColor(70,70,70,100)
 		for a=1,#getlevels() do
-			love.graphics.print(getlevels()[a],2,22+a*18)
+			if getlevels()[a]:startsWith("levels/") then
+				love.graphics.print(getlevels()[a]-"levels/",2,22+a*18)
+			else
+				love.graphics.print(getlevels()[a],2,22+a*18)
+			end
 		end
 	end
 	if gamestate == "choosecharacter" then
@@ -365,6 +403,9 @@ function love.draw()
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
 			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
 			love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
+			if drawmirror then
+				love.graphics.drawq(playboy,playerquad,math.floor(mirrorx-1-vx+528),math.floor(mirrory-4-vy+320),0,flip,1,16)
+			end
 		end
 		love.graphics.setColor(0,0,0)
 		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),playerWidth,4)
@@ -489,7 +530,7 @@ end
 
 function love.mousepressed(x,y,button)
 	if gamestate == "mainmenu" and button == "l" then
-		local levelfile = "levels/"..getlevels()[leveltoload]..".txt"
+		local levelfile = getlevels()[leveltoload]..".txt"
 		loadlevel(levelfile)
 	end
 end
