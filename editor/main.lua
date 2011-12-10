@@ -172,6 +172,7 @@ function newlevel(width,height,bg)
 	vx = 0
 	vy = 0
 	grid = true
+	wrap = false
 end
 
 function changelevelbounds(newwidth,newheight)
@@ -200,6 +201,7 @@ end
 function savelevel(filename)
 	local file = love.filesystem.newFile(filename)
 	file:open("w")
+	file:write(tostring(wrap).."\n")
 	file:write(background.."\n")
 	for a=1,levelheight do
 		local string = ""
@@ -251,7 +253,7 @@ function loadlevel(filename)
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
-	local a = 0
+	local a = 1
 	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
@@ -265,6 +267,9 @@ function loadlevel(filename)
 				end
 			end
 		else
+			if a == -1 then
+				if line == "true" then wrap = true else wrap = false end
+			end
 			if a == 0 then
 				background = line
 			end

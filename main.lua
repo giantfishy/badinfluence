@@ -1,7 +1,7 @@
 require("strong")
 
 function love.load()
-	love.graphics.setBackgroundColor(40,40,40)
+	love.graphics.setBackgroundColor(30,30,30)
 	love.graphics.setColor(70,70,70,100)
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
@@ -40,7 +40,7 @@ function loadlevel(filename)
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
-	local a = 0
+	local a = -1
 	for line in contents:lines("\n") do
 		if a > 0 then
 			level[a] = line / "."
@@ -54,6 +54,9 @@ function loadlevel(filename)
 				end
 			end
 		else
+			if a == -1 then
+				if line == "true" then wrap = true else wrap = false end
+			end
 			if a == 0 then
 				background = love.graphics.newImage(line)
 			end
@@ -365,12 +368,16 @@ function love.draw()
 		end
 		love.graphics.setColor(0,0,0)
 		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),playerWidth,4)
-		love.graphics.setColor(250,150,50)
+		love.graphics.setColor(250,130,40)
 		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),health/maxhealth*playerWidth,4)
-		--if invincibletimer > 0 then
-		--	love.graphics.setColor(255,255,100,100)
-		--	love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,invincibletimer/invincible*(playerWidth+2),6)
-		--end
+		love.graphics.setColor(255,180,60)
+		love.graphics.rectangle("fill",math.floor(px-vx+512),math.floor(py-8-vy+320),health/maxhealth*playerWidth,2)
+		local cooldown = 0
+		local maxcooldown = 0
+		if cooldown > 0 then
+			love.graphics.setColor(255,255,100,100)
+			love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,cooldown/maxcooldown*(playerWidth+2),6)
+		end
 		love.graphics.setColor(70,70,70,100)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
 	end
