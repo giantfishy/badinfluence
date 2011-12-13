@@ -6,11 +6,12 @@ function love.load()
 	love.graphics.setColorMode("replace")
 	rockwall = love.graphics.newImage("rockwall.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
+	slopeleft = love.graphics.newImage("slopeleft.png")
 	spikes = love.graphics.newImage("spikes.png")
 	playboy = love.graphics.newImage("characters/playboy.png")
 	playboyarm = love.graphics.newImage("characters/arms/playboy.png")
 	frame = 1
-	animationlengths = {1,6,4,4}
+	animationlengths = {1,6,4,1}
 	click = love.audio.newSource("sounds/click.ogg", "static")
 	vx = 0
 	vy = 0
@@ -42,7 +43,7 @@ function loadlevel(filename)
 	local contents = levelfile:read()
 	local a = -1
 	for line in contents:lines("\n") do
-		line = line - "\r"
+		line = line:chomp()
 		if a > 0 then
 			level[a] = line / "."
 			objects[a] = {}
@@ -115,7 +116,7 @@ function loadlevel(filename)
 				collisions[a][b] = "slopeRight"
 			end
 			if level[a][b] == ">" then
-				level[a][b] = 0
+				level[a][b] = slopeleft
 				collisions[a][b] = "slopeLeft"
 			end
 			if level[a][b] == " " then level[a][b] = 0 end
@@ -173,6 +174,7 @@ end
 
 function getInput()
 	animation = 1
+	sliding = false
 	if love.keyboard.isDown(rightkey) and xspeed < speed then
 		xspeed = xspeed + 1
 	end
@@ -181,6 +183,11 @@ function getInput()
 	end
 	if not love.keyboard.isDown(leftkey,rightkey) or (love.keyboard.isDown(leftkey) and love.keyboard.isDown(rightkey)) then
 		xspeed = 0
+	end
+	if (((onblock(px-3,py) ~= "empty" or onblock(px-3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(leftkey)) or ((onblock(px+playerWidth+3,py) ~= "empty" or onblock(px+playerWidth+3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(rightkey))) and onblock(px+playerWidth/2,py+playerHeight+4) == "empty" then
+		sliding = true
+		animation = 4
+		xspeed = xspeed/8
 	end
 	if jumping and (onblock(px-3,py) ~= "empty" or onblock(px-3,py+playerHeight) ~= "empty") and onblock(px,py+playerHeight+1) == "empty" and onblock(px+playerWidth,py+playerHeight+1) == "empty" then
 		xspeed = speed+1
@@ -201,14 +208,23 @@ function getInput()
 end
 
 function move(dt)
-	animation = 1
+	if animation ~= 4 then animation = 1 end
 	if xspeed > 0 then
 		animation = 2
 		if onblock(px + playerWidth + xspeed, py + playerHeight) ~= "block" and onblock(px+playerWidth+xspeed,py) ~= "block" and onblock(px+playerWidth+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
+			if onblock(px+playerWidth+xspeed,py+playerHeight) == "slopeRight" then
+				py = py - xspeed
+			end
+			if onblock(px+playerWidth+xspeed,py+playerHeight) == "slopeLeft" then
+				animation = 1
+				xspeed = 0
+			end
 		else
 			xspeed = 0
 			if love.keyboard.isDown(rightkey) then
+				sliding = true
+				direction = "left"
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2 then 
@@ -220,14 +236,6 @@ function move(dt)
 				end
 			end
 		end
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
-			px = px + xspeed
-			py = py + xspeed
-		end
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeLeft" then
-			px = px + xspeed
-			py = py - xspeed
-		end
 		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
 			animation = 1
 			xspeed = 0
@@ -237,9 +245,19 @@ function move(dt)
 		animation = 2
 		if onblock(px + xspeed, py + playerHeight) ~= "block" and onblock(px+xspeed,py) ~= "block" and onblock(px+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
+			if onblock(px+xspeed,py+playerHeight) == "slopeLeft" then
+				py = py+xspeed
+			end
+			if onblock(px+xspeed,py+playerHeight) == "slopeRight" then
+				animation = 1
+				xspeed = 0
+			end
 		else
+			animation = 1
 			xspeed = 0
 			if love.keyboard.isDown(leftkey) then
+				sliding = true
+				direction = "right"
 				animation = 4
 				if charactertype == 1 and yspeed > 2.5 then yspeed = 2.5 end
 				if charactertype == 2 then 
@@ -250,18 +268,6 @@ function move(dt)
 					end
 				end
 			end
-		end
-		if onblock(px + xspeed, py + playerHeight) == "slopeLeft" then
-			px = px + xspeed
-			py = py + xspeed
-		end
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "slopeRight" then
-			px = px + xspeed
-			py = py - xspeed
-		end
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
-			animation = 1
-			xspeed = 0
 		end
 	end
 	if yspeed ~= 0 and animation ~= 4 then animation = 3 end
@@ -275,12 +281,12 @@ function move(dt)
 		if px > levelheight*32-playerWidth/2 then px = 0-playerWidth/2 end
 	end
 	drawmirror = false
-	if levelat(px,py) == "offscreen" then
+	if levelat(px,py) == "offscreen" and wrap then
 		drawmirror = true
 		mirrorx = levelheight*32+px
 		mirrory = py
 	end
-	if levelat(px+playerWidth,py) == "offscreen" then
+	if levelat(px+playerWidth,py) == "offscreen" and wrap then
 		drawmirror = true
 		mirrorx = px-levelheight*32
 		mirrory = py
@@ -293,11 +299,13 @@ function move(dt)
 	end
 	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)
 	viewport(px,py)
-	direction = "right"
-	if mx < px+(playerWidth/2)-1-vx+512 then direction = "left" end
+	if sliding == false then
+		direction = "right"
+		if mx < px+(playerWidth/2)-1-vx+512 then direction = "left" end
+	end
 	local framedelay = 0.1
 	if animation == 2 then framedelay = 0.6/math.abs(xspeed) end
-	if animation == 3 then framedelay = 1.6/(0-yspeed) end
+	if animation == 3 then framedelay = 0.8/(0-yspeed) end
 	if ((direction == "left" and love.keyboard.isDown(rightkey)) or (direction == "right" and love.keyboard.isDown(leftkey))) and animation == 2 then
 		framedelay = framedelay * -1
 	end
@@ -313,22 +321,35 @@ function move(dt)
 end
 
 function manifestGravity()
-	if onblock(px, py + playerHeight+1) == "block" and onblock(px + playerWidth, py + playerHeight+1) == "block" then
+	if onblock(px, py + playerHeight+1) ~= "empty" or onblock(px + playerWidth, py + playerHeight+1) ~= "empty" then
 		yspeed = 0
 	else
 		yspeed = yspeed + gravity
 	end
 	if yspeed > 8 then yspeed = 8 end
+	if onblock(px,py+playerHeight) == "slopeLeft" then
+		local xcell = math.ceil((py+playerHeight)/32)
+		local ycell = math.ceil(px/32)
+		py = xcell*32-(ycell*32-px)-playerHeight
+		local distance = 1
+		while onblock(px,py+playerHeight+distance) == "slopeLeft" do
+			distance = distance-1
+		end
+		py = py-distance
+		yspeed = 0
+	end
 	if yspeed > 0 then
-		if onblock(px, py + playerHeight + yspeed) ~= "block" and onblock(px + playerWidth, py + playerHeight + yspeed) ~= "block" then 
+		if onblock(px, py + playerHeight + yspeed) == "empty" and onblock(px + playerWidth, py + playerHeight + yspeed) == "empty" then 
 			py = py + yspeed
 		else
 			local distance = 1
-			while onblock(px,py+playerHeight+distance) ~= "block" and onblock(px+playerWidth,py+playerHeight+distance) ~= "block" do
+			while onblock(px,py+playerHeight+distance) ~= "empty" or onblock(px+playerWidth,py+playerHeight+distance) ~= "empty" do
 				distance = distance + 1
 			end
 			py = py + distance-1
 			yspeed = 0
+		end
+		if onblock(px+playerWidth,py+playerHeight+2) == "slopeRight" then
 		end
 	end
 	if yspeed < 0 then
@@ -401,8 +422,11 @@ function love.draw()
 			armangle = math.atan((my-(py+13-4-vy+320))/(mx-(px+playerWidth/2-1-vx+512)))+math.pi/2
 		end
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
+			love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*3-vx+512),math.floor(py+15-vy+320),armangle,flip,1,5,2)
 			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
-			love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
+			if animation ~= 4 then
+				love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
+			end
 			if drawmirror then
 				love.graphics.drawq(playboy,playerquad,math.floor(mirrorx-1-vx+528),math.floor(mirrory-4-vy+320),0,flip,1,16)
 			end
@@ -421,6 +445,7 @@ function love.draw()
 		end
 		love.graphics.setColor(70,70,70,100)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
+		love.graphics.print(onblock(px,py+playerHeight)..px.." "..py,0,40)
 	end
 	if gamestate == "paused" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -432,7 +457,23 @@ function onblock(x,y)
 	local xcell = math.ceil(y/32)
 	local ycell = math.ceil(x/32)
 	if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
-		return collisions[xcell][ycell]
+		if collisions[xcell][ycell]:startsWith("slope") then
+			if collisions[xcell][ycell]:endsWith("Left") then
+				if x-(ycell-1)*32 < y-(xcell-1)*32 then
+					return "slopeLeft"
+				else
+					return "empty"
+				end
+			else
+				if x-(ycell-1)*32 > 32-y+(xcell-1)*32 then
+					return "slopeRight"
+				else
+					return "empty"
+				end
+			end
+		else
+			return collisions[xcell][ycell]
+		end
 	else
 		return "empty"
 	end

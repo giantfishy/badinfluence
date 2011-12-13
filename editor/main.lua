@@ -255,7 +255,7 @@ function loadlevel(filename)
 	local contents = levelfile:read()
 	local a = -1
 	for line in contents:lines("\n") do
-		line = line - "\r"
+		line = line:chomp()
 		if a > 0 then
 			level[a] = line / "."
 			objects[a] = {}
@@ -354,7 +354,7 @@ function love.keypressed(key)
 						if not fields[3]:startsWith("backgrounds/") then
 							fields[3] = "backgrounds/"..fields[3]
 						end
-						newlevel(tonumber(fields[1]),tonumber(fields[2]),fields[3])
+						newlevel(tonumber(fields[1]),tonumber(fields[2]),fields[3],fields[4])
 						state = "editing"
 					end
 				end
