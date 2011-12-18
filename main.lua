@@ -7,6 +7,9 @@ function love.load()
 	rockwall = love.graphics.newImage("rockwall.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
 	slopeleft = love.graphics.newImage("slopeleft.png")
+	sloperight = love.graphics.newImage("sloperight.png")
+	ceilingleft = love.graphics.newImage("ceill.png")
+	ceilingright = love.graphics.newImage("ceilr.png")
 	spikes = love.graphics.newImage("spikes.png")
 	playboy = love.graphics.newImage("characters/playboy.png")
 	playboyarm = love.graphics.newImage("characters/arms/playboy.png")
@@ -23,6 +26,9 @@ function love.load()
 	rightkey = "d"
 	jumpkey = "w"
 	usekey = "lshift"
+	joystickleft = 2
+	joystickright = 3
+	joystickjump = 8
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
@@ -112,12 +118,20 @@ function loadlevel(filename)
 				end
 			end
 			if level[a][b] == "<" then
-				level[a][b] = 0
+				level[a][b] = sloperight
 				collisions[a][b] = "slopeRight"
 			end
 			if level[a][b] == ">" then
 				level[a][b] = slopeleft
 				collisions[a][b] = "slopeLeft"
+			end
+			if level[a][b] == "{" then
+				level[a][b] = ceilingleft
+				collisions[a][b] = "empty"
+			end
+			if level[a][b] == "}" then
+				level[a][b] = ceilingright
+				collisions[a][b] = "empty"
 			end
 			if level[a][b] == " " then level[a][b] = 0 end
 			if level[a][b] == "#" then
@@ -155,6 +169,7 @@ function love.update(dt)
 		getInput()
 		move(dt)
 		manifestGravity()
+		animate(dt)
 		viewport(px,py)
 	end
 	if gamestate == "mainmenu" then
@@ -173,6 +188,13 @@ function love.update(dt)
 end
 
 function getInput()
+	if love.joystick.isOpen(0) and vx and vy then
+		local x = love.joystick.getAxis(0,2)
+		local y = love.joystick.getAxis(0,3)
+		if math.abs(x) > 0.3 or math.abs(y) > 0.3 then
+			love.mouse.setPosition(px+playerWidth/2-vx+512+x*200,py+playerHeight/2-vy+320+y*200)
+		end
+	end
 	animation = 1
 	sliding = false
 	if love.keyboard.isDown(rightkey) and xspeed < speed then
@@ -184,7 +206,7 @@ function getInput()
 	if not love.keyboard.isDown(leftkey,rightkey) or (love.keyboard.isDown(leftkey) and love.keyboard.isDown(rightkey)) then
 		xspeed = 0
 	end
-	if (((onblock(px-3,py) ~= "empty" or onblock(px-3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(leftkey)) or ((onblock(px+playerWidth+3,py) ~= "empty" or onblock(px+playerWidth+3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(rightkey))) and onblock(px+playerWidth/2,py+playerHeight+4) == "empty" then
+	if (((onblock(px-3,py) ~= "empty" and onblock(px-3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(leftkey)) or ((onblock(px+playerWidth+3,py) ~= "empty" and onblock(px+playerWidth+3,py+playerHeight) ~= "empty") and not love.keyboard.isDown(rightkey))) and onblock(px+playerWidth/2,py+playerHeight+4) == "empty" then
 		sliding = true
 		animation = 4
 		xspeed = xspeed/8
@@ -211,18 +233,12 @@ function move(dt)
 	if animation ~= 4 then animation = 1 end
 	if xspeed > 0 then
 		animation = 2
-		if onblock(px + playerWidth + xspeed, py + playerHeight) ~= "block" and onblock(px+playerWidth+xspeed,py) ~= "block" and onblock(px+playerWidth+xspeed,py+playerHeight/2) ~= "block" then
+		if onblock(px + playerWidth + xspeed, py + playerHeight - 2) ~= "block" and onblock(px+playerWidth+xspeed,py) ~= "block" and onblock(px+playerWidth+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
-			if onblock(px+playerWidth+xspeed,py+playerHeight) == "slopeRight" then
-				py = py - xspeed
-			end
-			if onblock(px+playerWidth+xspeed,py+playerHeight) == "slopeLeft" then
-				animation = 1
-				xspeed = 0
-			end
 		else
+			animation = 1
 			xspeed = 0
-			if love.keyboard.isDown(rightkey) then
+			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth-2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
 				sliding = true
 				direction = "left"
 				animation = 4
@@ -236,26 +252,15 @@ function move(dt)
 				end
 			end
 		end
-		if onblock(px + playerWidth + xspeed, py + playerHeight) == "block" then
-			animation = 1
-			xspeed = 0
-		end
 	end
 	if xspeed < 0 then
 		animation = 2
-		if onblock(px + xspeed, py + playerHeight) ~= "block" and onblock(px+xspeed,py) ~= "block" and onblock(px+xspeed,py+playerHeight/2) ~= "block" then
+		if onblock(px + xspeed, py + playerHeight - 2) ~= "block" and onblock(px+xspeed,py) ~= "block" and onblock(px+xspeed,py+playerHeight/2) ~= "block" then
 			px = px + xspeed
-			if onblock(px+xspeed,py+playerHeight) == "slopeLeft" then
-				py = py+xspeed
-			end
-			if onblock(px+xspeed,py+playerHeight) == "slopeRight" then
-				animation = 1
-				xspeed = 0
-			end
 		else
 			animation = 1
 			xspeed = 0
-			if love.keyboard.isDown(leftkey) then
+			if love.keyboard.isDown(leftkey) and onblock(px-2,py+playerHeight) == "block" and onblock(px-2,py) == "block" then
 				sliding = true
 				direction = "right"
 				animation = 4
@@ -297,6 +302,69 @@ function move(dt)
 	if charactertype == 3 and health < maxhealth then
 		health = health + 0.4
 	end
+end
+
+function manifestGravity()
+	if onblock(px, py + playerHeight+1) == "block" or onblock(px + playerWidth, py + playerHeight+1) == "block" then
+		yspeed = 0
+	else
+		yspeed = yspeed + gravity
+	end
+	if yspeed > 8 then yspeed = 8 end
+	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeLeft" and love.keyboard.isDown(leftkey) then
+		px = px - 2
+		py = py - 4
+	end
+	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeRight" and love.keyboard.isDown(rightkey) then
+		px = px + 2
+		py = py - 4
+	end
+	if onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft" then
+		py = py - 2
+		local xcell = math.ceil((py+playerHeight)/32)
+		local ycell = math.ceil(px/32)
+		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
+		if px-(ycell-1)*32 < py+playerHeight-(xcell-1)*32 then
+			py = xcell*32-(ycell*32-px)-playerHeight+2
+			yspeed = 0
+		else
+			py = py + 2
+		end
+	end
+	if onblock(px+playerWidth,py+playerHeight) == "slopeRight" or onblock(px+playerWidth,py+playerHeight-2) == "slopeRight" then
+		py = py - 2
+		local xcell = math.ceil((py+playerHeight)/32)
+		local ycell = math.ceil((px+playerWidth)/32)
+		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
+		if px-(ycell-1)*32 > xcell*32-py+playerHeight then
+			py = xcell*32-px-(ycell-1)*32-playerHeight+2
+			yspeed = 0
+		else
+			py = py + 2
+		end
+	end
+	if yspeed > 0 then
+		if onblock(px, py + playerHeight + yspeed) ~= "block" and onblock(px + playerWidth, py + playerHeight + yspeed) ~= "block" then 
+			py = py + yspeed
+		else
+			local distance = 1
+			while onblock(px,py+playerHeight+distance) ~= "block" and onblock(px+playerWidth,py+playerHeight+distance) ~= "block" do
+				distance = distance + 1
+			end
+			py = py + distance-1
+			yspeed = 0
+		end
+	end
+	if yspeed < 0 then
+		if onblock(px, py + yspeed) ~= "block" and onblock(px + playerWidth, py + yspeed) ~= "block" then 
+			py = py + yspeed
+		else
+			yspeed = 0
+		end
+	end
+end
+
+function animate(dt)
 	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)
 	viewport(px,py)
 	if sliding == false then
@@ -317,47 +385,6 @@ function move(dt)
 	if frame < 1 then
 		frame = animationlengths[animation]
 		if animation == 3 then frame = 1 end
-	end
-end
-
-function manifestGravity()
-	if onblock(px, py + playerHeight+1) ~= "empty" or onblock(px + playerWidth, py + playerHeight+1) ~= "empty" then
-		yspeed = 0
-	else
-		yspeed = yspeed + gravity
-	end
-	if yspeed > 8 then yspeed = 8 end
-	if onblock(px,py+playerHeight) == "slopeLeft" then
-		local xcell = math.ceil((py+playerHeight)/32)
-		local ycell = math.ceil(px/32)
-		py = xcell*32-(ycell*32-px)-playerHeight
-		local distance = 1
-		while onblock(px,py+playerHeight+distance) == "slopeLeft" do
-			distance = distance-1
-		end
-		py = py-distance
-		yspeed = 0
-	end
-	if yspeed > 0 then
-		if onblock(px, py + playerHeight + yspeed) == "empty" and onblock(px + playerWidth, py + playerHeight + yspeed) == "empty" then 
-			py = py + yspeed
-		else
-			local distance = 1
-			while onblock(px,py+playerHeight+distance) ~= "empty" or onblock(px+playerWidth,py+playerHeight+distance) ~= "empty" do
-				distance = distance + 1
-			end
-			py = py + distance-1
-			yspeed = 0
-		end
-		if onblock(px+playerWidth,py+playerHeight+2) == "slopeRight" then
-		end
-	end
-	if yspeed < 0 then
-		if onblock(px, py + yspeed) == "empty" and onblock(px + playerWidth, py + yspeed) == "empty" then 
-			py = py + yspeed
-		else
-			yspeed = 0
-		end
 	end
 end
 
@@ -445,7 +472,7 @@ function love.draw()
 		end
 		love.graphics.setColor(70,70,70,100)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
-		love.graphics.print(onblock(px,py+playerHeight)..px.." "..py,0,40)
+		if output then love.graphics.print(output,0,40) end
 	end
 	if gamestate == "paused" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -453,27 +480,18 @@ function love.draw()
 	end
 end
 
+function writeToLog(message)
+	local file = love.filesystem.newFile("debug/log.txt")
+	file:open("a")
+	file:write(message.."\n")
+	file:close()
+end
+
 function onblock(x,y)
 	local xcell = math.ceil(y/32)
 	local ycell = math.ceil(x/32)
 	if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
-		if collisions[xcell][ycell]:startsWith("slope") then
-			if collisions[xcell][ycell]:endsWith("Left") then
-				if x-(ycell-1)*32 < y-(xcell-1)*32 then
-					return "slopeLeft"
-				else
-					return "empty"
-				end
-			else
-				if x-(ycell-1)*32 > 32-y+(xcell-1)*32 then
-					return "slopeRight"
-				else
-					return "empty"
-				end
-			end
-		else
-			return collisions[xcell][ycell]
-		end
+		return collisions[xcell][ycell]
 	else
 		return "empty"
 	end
@@ -561,6 +579,35 @@ function love.keypressed(key)
 		gamestate = "mainmenu"
 	end
 	if key == "escape" or key == "p" then
+		if gamestate == "playing" then
+			gamestate = "paused"
+		elseif gamestate == "paused" then
+			gamestate = "playing"
+		end
+	end
+end
+
+function love.joystickpressed(joystick,button)
+	if button == "left" and gamestate == "choosecharacter" then
+		changecharacter(characternum - 1)
+	end
+	if button == "right" and gamestate == "choosecharacter" then
+		changecharacter(characternum + 1)
+	end
+	if button == " " and gamestate == "choosecharacter" then
+		changecharacter(characternum)
+		gamestate = "playing"
+	end
+	if button == jumpkey and gamestate == "playing" then
+		jumping = true
+	end
+	if button == "z" and gamestate == "playing" then
+		gamestate = "choosecharacter"
+	end
+	if button == "x" and gamestate == "playing" then
+		gamestate = "mainmenu"
+	end
+	if button == "escape" or button == "p" then
 		if gamestate == "playing" then
 			gamestate = "paused"
 		elseif gamestate == "paused" then

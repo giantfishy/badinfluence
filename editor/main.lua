@@ -13,13 +13,17 @@ function love.load()
 	rockwall = love.graphics.newImage("rockwall.png")
 	spikes = love.graphics.newImage("spikes.png")
 	rockwallbg = love.graphics.newImage("rockwallbg.png")
-	items = {"b"," b","w","#"}
+	slopeleft = love.graphics.newImage("slopeleft.png")
+	sloperight = love.graphics.newImage("sloperight.png")
+	ceilingleft = love.graphics.newImage("ceill.png")
+	ceilingright = love.graphics.newImage("ceilr.png")
+	items = {"b"," b","w","#","<",">","{","}"}
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
 	levelnum = 1
 	messages = {}
-	newlevel(32,20,"backgrounds/temple.png")
+	newlevel(32,20,"backgrounds/temple.png",true)
 end
 
 function love.update(dt)
@@ -82,6 +86,18 @@ function love.draw()
 				if level[a][b] == "#" then
 					love.graphics.draw(spawnpoint,(a-1)*32-vx,(b-1)*32-vy)
 				end
+				if level[a][b] == "<" then
+					love.graphics.draw(sloperight,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == ">" then
+					love.graphics.draw(slopeleft,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == "{" then
+					love.graphics.draw(ceilingleft,(a-1)*32-vx,(b-1)*32-vy)
+				end
+				if level[a][b] == "}" then
+					love.graphics.draw(ceilingright,(a-1)*32-vx,(b-1)*32-vy)
+				end
 			end
 		end
 	end
@@ -108,6 +124,18 @@ function love.draw()
 		end
 		if items[n] == "#" then
 			love.graphics.draw(spawnpoint,buttonx,buttony)
+		end
+		if items[n] == "<" then
+			love.graphics.draw(sloperight,buttonx,buttony)
+		end
+		if items[n] == ">" then
+			love.graphics.draw(slopeleft,buttonx,buttony)
+		end
+		if items[n] == "{" then
+			love.graphics.draw(ceilingleft,buttonx,buttony)
+		end
+		if items[n] == "}" then
+			love.graphics.draw(ceilingright,buttonx,buttony)
 		end
 		if items[n] == " b" then
 			love.graphics.draw(rockwallbg,buttonx,buttony)
