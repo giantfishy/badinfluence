@@ -238,7 +238,7 @@ function move(dt)
 		else
 			animation = 1
 			xspeed = 0
-			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth-2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
+			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth+2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
 				sliding = true
 				direction = "left"
 				animation = 4
@@ -311,33 +311,33 @@ function manifestGravity()
 		yspeed = yspeed + gravity
 	end
 	if yspeed > 8 then yspeed = 8 end
-	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeLeft" and love.keyboard.isDown(leftkey) then
-		px = px - 2
+	if onblock(px-4,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeLeft" and love.keyboard.isDown(leftkey) then
+		px = px - 4
 		py = py - 4
 	end
-	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeRight" and love.keyboard.isDown(rightkey) then
-		px = px + 2
+	if onblock(px+playerWidth+4,py+playerHeight-4) ~= "block" and onblock(px+playerWidth,py+playerHeight) == "slopeRight" and love.keyboard.isDown(rightkey) then
+		px = px +4
 		py = py - 4
 	end
-	if onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft" then
+	if  py/32-math.floor(py/32) >= px/32-math.floor(px/32) and onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft" then
 		py = py - 2
-		local xcell = math.ceil((py+playerHeight)/32)
-		local ycell = math.ceil(px/32)
+		local xcell = math.floor(px/32)
+		local ycell = math.floor((py+playerHeight)/32)
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		if px-(ycell-1)*32 < py+playerHeight-(xcell-1)*32 then
-			py = xcell*32-(ycell*32-px)-playerHeight+2
+		if px-(xcell-1)*32 <= py+playerHeight-(ycell-1)*32 then
+			py = ycell*32-(xcell*32-px)-playerHeight+2
 			yspeed = 0
 		else
 			py = py + 2
 		end
 	end
-	if onblock(px+playerWidth,py+playerHeight) == "slopeRight" or onblock(px+playerWidth,py+playerHeight-2) == "slopeRight" then
+	if  (px+playerWidth)/32-math.floor((px+playerWidth)/32) >= (py+playerHeight)/32-math.floor((py+playerHeight)/32) and onblock(px+playerWidth,py+playerHeight) == "slopeRight" or onblock(px+playerWidth,py+playerHeight-2) == "slopeRight" then
 		py = py - 2
-		local xcell = math.ceil((py+playerHeight)/32)
-		local ycell = math.ceil((px+playerWidth)/32)
+		local xcell = math.ceil((px+playerWidth)/32)
+		local ycell = math.ceil((py+playerHeight)/32)
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		if px-(ycell-1)*32 > xcell*32-py+playerHeight then
-			py = xcell*32-px-(ycell-1)*32-playerHeight+2
+		if px-(xcell-1)*32 >= py+playerHeight-(ycell-1)*32 then
+			py = ycell*32-(xcell*32-px)-playerHeight+2
 			yspeed = 0
 		else
 			py = py + 2
