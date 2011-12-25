@@ -319,29 +319,23 @@ function manifestGravity()
 		px = px +4
 		py = py - 4
 	end
-	if  py/32-math.floor(py/32) >= px/32-math.floor(px/32) and onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft" then
-		py = py - 2
-		local xcell = math.floor(px/32)
-		local ycell = math.floor((py+playerHeight)/32)
+	local xcell = math.floor(px/32)
+	local ycell = math.floor((py+playerHeight)/32)
+	local xincell = px-xcell*32
+	local yincell = (py+playerHeight)-ycell*32
+	if yincell >= xincell and (onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft") then
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		if px-(xcell-1)*32 <= py+playerHeight-(ycell-1)*32 then
-			py = ycell*32-(xcell*32-px)-playerHeight+2
-			yspeed = 0
-		else
-			py = py + 2
-		end
+		py = 32*ycell+xincell-playerHeight+2
+		if yspeed>0 then yspeed = 0 end
 	end
-	if  (px+playerWidth)/32-math.floor((px+playerWidth)/32) >= (py+playerHeight)/32-math.floor((py+playerHeight)/32) and onblock(px+playerWidth,py+playerHeight) == "slopeRight" or onblock(px+playerWidth,py+playerHeight-2) == "slopeRight" then
-		py = py - 2
-		local xcell = math.ceil((px+playerWidth)/32)
-		local ycell = math.ceil((py+playerHeight)/32)
+	local xcell = math.floor((px+playerWidth)/32)
+	local ycell = math.floor((py+playerHeight)/32)
+	local xincell = (px+playerWidth)-xcell*32
+	local yincell = (py+playerHeight)-ycell*32
+	if 32-yincell <= xincell and (onblock((px+playerWidth),py+playerHeight) == "slopeRight" or onblock((px+playerWidth),py+playerHeight-2) == "slopeRight") then
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		if px-(xcell-1)*32 >= py+playerHeight-(ycell-1)*32 then
-			py = ycell*32-(xcell*32-px)-playerHeight+2
-			yspeed = 0
-		else
-			py = py + 2
-		end
+		py = (32-xincell)+(ycell*32)-playerHeight+2
+		if yspeed>0 then yspeed = 0 end
 	end
 	if yspeed > 0 then
 		if onblock(px, py + playerHeight + yspeed) ~= "block" and onblock(px + playerWidth, py + playerHeight + yspeed) ~= "block" then 
