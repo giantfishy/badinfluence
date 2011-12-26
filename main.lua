@@ -11,10 +11,16 @@ function love.load()
 	ceilingleft = love.graphics.newImage("ceill.png")
 	ceilingright = love.graphics.newImage("ceilr.png")
 	spikes = love.graphics.newImage("spikes.png")
-	playboy = love.graphics.newImage("characters/playboy.png")
-	playboyarm = love.graphics.newImage("characters/arms/playboy.png")
 	frame = 1
 	animationlengths = {1,6,4,1}
+	music1 = love.audio.newSource("sounds/melody.ogg")
+	music2 = love.audio.newSource("sounds/ingame.ogg")
+	musicswap = 1
+	musicswapspeed = 0
+	music1:setLooping(true)
+	music2:setLooping(true)
+	music1:play()
+	music2:play()
 	click = love.audio.newSource("sounds/click.ogg", "static")
 	vx = 0
 	vy = 0
@@ -32,10 +38,22 @@ function love.load()
 	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
-	font = love.graphics.newFont("fonts/london.ttf", 18)
+	charsprites = {}
+	arms = {}
+	for n=1,12 do
+		charsprites[n] = love.graphics.newImage("characters/"..characternames[n]..".png")
+		arms[n] = love.graphics.newImage("characters/arms/"..characternames[n]..".png")
+	end
+	types = {"ganker","flanker","tanker"}
+	font = love.graphics.newFont("fonts/london.ttf",18)
 	love.graphics.setFont(font)
 	leveltoload = 1
 	gamestate = "mainmenu"
+end
+
+function swapmusic(num)
+	if num == 1 then musicswapspeed = 0.01 end
+	if num == 2 then musicswapspeed = -0.01 end
 end
 
 function loadlevel(filename)
@@ -165,6 +183,7 @@ end
 function love.update(dt)
 	mx = love.mouse.getX()
 	my = love.mouse.getY()
+	setMusicVolumes()
 	if gamestate == "playing" then
 		getInput()
 		move(dt)
@@ -185,6 +204,14 @@ function love.update(dt)
 		end
 		if previouslevel ~= leveltoload then love.audio.play(click) end
 	end
+end
+
+function setMusicVolumes()
+	musicswap = musicswap + musicswapspeed
+	if musicswap < 0 then musicswap = 0; musicswapspeed = 0 end
+	if musicswap > 1 then musicswap = 1; musicswapspeed = 0 end
+	music1:setVolume(musicswap)
+	music2:setVolume(1-musicswap)
 end
 
 function getInput()
@@ -238,7 +265,7 @@ function move(dt)
 		else
 			animation = 1
 			xspeed = 0
-			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth+2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
+			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth-2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
 				sliding = true
 				direction = "left"
 				animation = 4
@@ -311,31 +338,37 @@ function manifestGravity()
 		yspeed = yspeed + gravity
 	end
 	if yspeed > 8 then yspeed = 8 end
-	if onblock(px-4,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeLeft" and love.keyboard.isDown(leftkey) then
-		px = px - 4
+	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeLeft" and love.keyboard.isDown(leftkey) then
+		px = px - 2
 		py = py - 4
 	end
-	if onblock(px+playerWidth+4,py+playerHeight-4) ~= "block" and onblock(px+playerWidth,py+playerHeight) == "slopeRight" and love.keyboard.isDown(rightkey) then
-		px = px +4
+	if onblock(px-2,py+playerHeight-4) ~= "block" and onblock(px,py+playerHeight) == "slopeRight" and love.keyboard.isDown(rightkey) then
+		px = px + 2
 		py = py - 4
 	end
-	local xcell = math.floor(px/32)
-	local ycell = math.floor((py+playerHeight)/32)
-	local xincell = px-xcell*32
-	local yincell = (py+playerHeight)-ycell*32
-	if yincell >= xincell and (onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft") then
+	if onblock(px,py+playerHeight) == "slopeLeft" or onblock(px,py+playerHeight-2) == "slopeLeft" then
+		py = py - 2
+		local xcell = math.ceil((py+playerHeight)/32)
+		local ycell = math.ceil(px/32)
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		py = 32*ycell+xincell-playerHeight+2
-		if yspeed>0 then yspeed = 0 end
+		if px-(ycell-1)*32 < py+playerHeight-(xcell-1)*32 then
+			py = xcell*32-(ycell*32-px)-playerHeight+2
+			yspeed = 0
+		else
+			py = py + 2
+		end
 	end
-	local xcell = math.floor((px+playerWidth)/32)
-	local ycell = math.floor((py+playerHeight)/32)
-	local xincell = (px+playerWidth)-xcell*32
-	local yincell = (py+playerHeight)-ycell*32
-	if 32-yincell <= xincell and (onblock((px+playerWidth),py+playerHeight) == "slopeRight" or onblock((px+playerWidth),py+playerHeight-2) == "slopeRight") then
+	if onblock(px+playerWidth,py+playerHeight) == "slopeRight" or onblock(px+playerWidth,py+playerHeight-2) == "slopeRight" then
+		py = py - 2
+		local xcell = math.ceil((py+playerHeight)/32)
+		local ycell = math.ceil((px+playerWidth)/32)
 		if love.keyboard.isDown(leftkey,rightkey) then animation = 2 else animation = 1 end
-		py = (32-xincell)+(ycell*32)-playerHeight+2
-		if yspeed>0 then yspeed = 0 end
+		if px-(ycell-1)*32 > xcell*32-py+playerHeight then
+			py = xcell*32-px-(ycell-1)*32-playerHeight+2
+			yspeed = 0
+		else
+			py = py + 2
+		end
 	end
 	if yspeed > 0 then
 		if onblock(px, py + playerHeight + yspeed) ~= "block" and onblock(px + playerWidth, py + playerHeight + yspeed) ~= "block" then 
@@ -443,13 +476,13 @@ function love.draw()
 			armangle = math.atan((my-(py+13-4-vy+320))/(mx-(px+playerWidth/2-1-vx+512)))+math.pi/2
 		end
 		if invincibletimer < 0 or flash/3 ~= math.floor(flash/3) then
-			love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*3-vx+512),math.floor(py+15-vy+320),armangle,flip,1,5,2)
-			love.graphics.drawq(playboy,playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
+			love.graphics.draw(arms[characternum],math.floor(px+playerWidth/2-flip*3-vx+512),math.floor(py+15-vy+320),armangle,flip,1,5,2)
+			love.graphics.drawq(charsprites[characternum],playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
 			if animation ~= 4 then
-				love.graphics.draw(playboyarm,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
+				love.graphics.draw(arms[characternum],math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
 			end
 			if drawmirror then
-				love.graphics.drawq(playboy,playerquad,math.floor(mirrorx-1-vx+528),math.floor(mirrory-4-vy+320),0,flip,1,16)
+				love.graphics.drawq(charsprites[characternum],playerquad,math.floor(mirrorx-1-vx+528),math.floor(mirrory-4-vy+320),0,flip,1,16)
 			end
 		end
 		love.graphics.setColor(0,0,0)
@@ -472,6 +505,7 @@ function love.draw()
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.printf("PAUSED",0,love.graphics.getHeight()/2,love.graphics.getWidth(),"center")
 	end
+	love.graphics.print(musicswap,0,100) -- TEMPORARY THING DELETE LATER
 end
 
 function writeToLog(message)
@@ -571,6 +605,7 @@ function love.keypressed(key)
 	end
 	if key == "x" and gamestate == "playing" then
 		gamestate = "mainmenu"
+		swapmusic(1)
 	end
 	if key == "escape" or key == "p" then
 		if gamestate == "playing" then
@@ -614,5 +649,6 @@ function love.mousepressed(x,y,button)
 	if gamestate == "mainmenu" and button == "l" then
 		local levelfile = getlevels()[leveltoload]..".txt"
 		loadlevel(levelfile)
+		swapmusic(2)
 	end
 end

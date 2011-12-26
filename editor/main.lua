@@ -144,6 +144,7 @@ function love.draw()
 			love.graphics.draw(selected,buttonx,buttony)
 		end
 	end
+	love.graphics.print(tostring(getbackgrounds()[1]),1,10)
 	if state == "save" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.print("save as:\n"..levelname,10,10)
@@ -273,6 +274,17 @@ function getlevels()
 		end
 	end
 	return levels
+end
+
+function getbackgrounds()
+	local files = love.filesystem.enumerate("bgs")
+	local backgrounds = {}
+	for n=1,#files do
+		if tostring(files[n]):endsWith(".txt") then
+			table.insert(backgrounds,tostring(files[n])-".txt")
+		end
+	end
+	return backgrounds
 end
 
 function loadlevel(filename)
