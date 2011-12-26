@@ -265,7 +265,7 @@ function move(dt)
 		else
 			animation = 1
 			xspeed = 0
-			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth-2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
+			if love.keyboard.isDown(rightkey) and onblock(px+playerWidth+2,py+playerHeight) == "block" and onblock(px+playerWidth+2,py) == "block" then
 				sliding = true
 				direction = "left"
 				animation = 4
@@ -505,7 +505,6 @@ function love.draw()
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.printf("PAUSED",0,love.graphics.getHeight()/2,love.graphics.getWidth(),"center")
 	end
-	love.graphics.print(musicswap,0,100) -- TEMPORARY THING DELETE LATER
 end
 
 function writeToLog(message)
