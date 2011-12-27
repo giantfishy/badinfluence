@@ -9,21 +9,13 @@ function love.load()
 	sidebar = love.graphics.newImage("sidebar.png")
 	gridsquare = love.graphics.newImage("gridsquare.png")
 	selected = love.graphics.newImage("selected.png")
-	spawnpoint = love.graphics.newImage("spawnpoint.png")
-	rockwall = love.graphics.newImage("rockwall.png")
-	spikes = love.graphics.newImage("spikes.png")
-	rockwallbg = love.graphics.newImage("rockwallbg.png")
-	slopeleft = love.graphics.newImage("slopeleft.png")
-	sloperight = love.graphics.newImage("sloperight.png")
-	ceilingleft = love.graphics.newImage("ceill.png")
-	ceilingright = love.graphics.newImage("ceilr.png")
 	items = {"b"," b","w","#","<",">","{","}"}
 	background = "backgrounds/temple.png"
 	selecteditem = 1
 	levelname = ""
 	levelnum = 1
 	messages = {}
-	newlevel(32,20,"backgrounds/temple.png",true)
+	newlevel(32,20,"backgrounds/temple.png",true,"sand")
 end
 
 function love.update(dt)
@@ -144,7 +136,6 @@ function love.draw()
 			love.graphics.draw(selected,buttonx,buttony)
 		end
 	end
-	love.graphics.print(tostring(getbackgrounds()[1]),1,10)
 	if state == "save" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.print("save as:\n"..levelname,10,10)
@@ -161,7 +152,7 @@ function love.draw()
 		end
 		love.graphics.setFont(font)
 	end
-	if state == "new" then
+	if state == "new" or state == "change" then
 		placeholders[fieldnum] = "__"
 		if fields[fieldnum](1) then
 			placeholders[fieldnum] = fields[fieldnum].."_"
@@ -170,7 +161,7 @@ function love.draw()
 			placeholders[fieldnum] = fields[fieldnum]
 		end
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
-		love.graphics.print("level bounds:\n"..placeholders[1].."x"..placeholders[2].."\nbackground image:"..placeholders[3].."\nwraparound? (true/false) "..placeholders[4],10,10)
+		love.graphics.print("level bounds:\n"..placeholders[1].."x"..placeholders[2].."\nbackground image: "..placeholders[3].."\nwraparound? (true/false) "..placeholders[4].."\ntileset: "..placeholders[5],10,10)
 	end
 	if state == "reallyquit?" then
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
@@ -183,6 +174,18 @@ function love.draw()
 	love.graphics.setFont(font)
 end
 
+function loadtiles(dir)
+	spawnpoint = love.graphics.newImage("tiles/"..dir.."/spawnpoint.png")
+	rockwall = love.graphics.newImage("tiles/"..dir.."/rockwall.png")
+	spikes = love.graphics.newImage("tiles/"..dir.."/spikes.png")
+	rockwallbg = love.graphics.newImage("tiles/"..dir.."/rockwallbg.png")
+	slopeleft = love.graphics.newImage("tiles/"..dir.."/slopeleft.png")
+	sloperight = love.graphics.newImage("tiles/"..dir.."/sloperight.png")
+	ceilingleft = love.graphics.newImage("tiles/"..dir.."/ceill.png")
+	ceilingright = love.graphics.newImage("tiles/"..dir.."/ceilr.png")
+	
+end
+
 function edit(x,y,entry,layer)
 	if x < levelwidth+1 and y < levelheight+1 then
 		if layer == "lvl" or layer == "both" then level[x][y] = entry end
@@ -190,7 +193,7 @@ function edit(x,y,entry,layer)
 	end
 end
 
-function newlevel(width,height,bg,wraparound)
+function newlevel(width,height,bg,wraparound,tiledirectory)
 	levelwidth = 0
 	levelheight = 0
 	level = {}
@@ -202,6 +205,8 @@ function newlevel(width,height,bg,wraparound)
 	vy = 0
 	grid = true
 	wrap = wraparound
+	tileset = tiledirectory
+	loadtiles(tiledirectory)
 end
 
 function changelevelbounds(newwidth,newheight)
@@ -276,24 +281,13 @@ function getlevels()
 	return levels
 end
 
-function getbackgrounds()
-	local files = love.filesystem.enumerate("bgs")
-	local backgrounds = {}
-	for n=1,#files do
-		if tostring(files[n]):endsWith(".txt") then
-			table.insert(backgrounds,tostring(files[n])-".txt")
-		end
-	end
-	return backgrounds
-end
-
 function loadlevel(filename)
 	level = {}
 	objects = {}
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
-	local a = -1
+	local a = -2
 	for line in contents:lines("\n") do
 		line = line:chomp()
 		if a > 0 then
@@ -308,6 +302,9 @@ function loadlevel(filename)
 				end
 			end
 		else
+			if a == -2 then
+				tileset = line
+			end
 			if a == -1 then
 				if line == "true" then wrap = true else wrap = false end
 			end
@@ -332,6 +329,7 @@ function loadlevel(filename)
 		end
 	end
 	bgimage = love.graphics.newImage(background)
+	loadtiles(tileset)
 end
 
 function addmessage(string,time)
@@ -363,7 +361,9 @@ function love.keypressed(key)
 						if not levelname:endsWith(".txt") then
 							levelname = levelname..".txt"
 						end
-						savelevel(levelname)
+						if levelname(5) then
+							savelevel(levelname)
+						end
 						addmessage("level saved.",100)
 					else
 						addmessage("can not save level without spawn points",200)
@@ -387,14 +387,45 @@ function love.keypressed(key)
 				if key == "return" or key == "kpenter" then
 					fieldnum = fieldnum + 1
 					placeholders[fieldnum-1] = fields[fieldnum-1]
-					if fieldnum > 4 then
+					if fieldnum > 5 then
 						if not fields[3]:endsWith(".png") then
 							fields[3] = fields[3]..".png"
 						end
 						if not fields[3]:startsWith("backgrounds/") then
 							fields[3] = "backgrounds/"..fields[3]
 						end
-						newlevel(tonumber(fields[1]),tonumber(fields[2]),fields[3],fields[4])
+						newlevel(tonumber(fields[1]),tonumber(fields[2]),fields[3],fields[4],fields[5])
+						state = "editing"
+					end
+				end
+			end
+		end
+	end
+	if state == "change" then
+		if key == "delete" or key == "backspace" then
+			fields[fieldnum] = deletelastchar(fields[fieldnum])
+		else
+			if key(2) == nil then
+				if love.keyboard.isDown("lshift","rshift") then
+					fields[fieldnum] = fields[fieldnum]..key:capitalize()
+				else
+					fields[fieldnum] = fields[fieldnum]..key
+				end
+			else
+				if key == "return" or key == "kpenter" then
+					fieldnum = fieldnum + 1
+					placeholders[fieldnum-1] = fields[fieldnum-1]
+					if fieldnum > 5 then
+						if not fields[3]:endsWith(".png") then
+							fields[3] = fields[3]..".png"
+						end
+						if not fields[3]:startsWith("backgrounds/") then
+							fields[3] = "backgrounds/"..fields[3]
+						end
+						changelevelbounds(tonumber(fields[1]),tonumber(fields[2]))
+						bgimage = love.graphics.newImage(fields[3])
+						wrap = fields[4]
+						tileset = fields[5]
 						state = "editing"
 					end
 				end
@@ -403,9 +434,15 @@ function love.keypressed(key)
 	end
 	if key == "n" and state == "editing" then
 		state = "new"
-		fields = {"","","",""}
+		fields = {"","","","",""}
 		fieldnum = 1
-		placeholders = {"__","__","__","__"}
+		placeholders = {"__","__","__","__","__"}
+	end
+	if key == "c" and state == "editing" then
+		state = "change"
+		fields = {"","","","",""}
+		fieldnum = 1
+		placeholders = {"__","__","__","__","__"}
 	end
 	if key == "s" and state == "editing" then
 		state = "save"
@@ -428,12 +465,9 @@ function love.keypressed(key)
 		if state == "editing" then
 			state = "reallyquit?"
 		end
-		if state == "save" or state == "load" or state == "new" then
+		if state == "save" or state == "load" or state == "new" or state == "change" then
 			state = "editing"
 		end
-	end
-	if key == "j" then
-		addmessage(level[math.ceil((mx+vx)/32)][math.ceil((my+vy)/32)]..","..objects[math.ceil((mx+vx)/32)][math.ceil((my+vy)/32)],100)
 	end
 end
 

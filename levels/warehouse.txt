@@ -1,3 +1,4 @@
+sand
 true
 backgrounds/trees.png
   .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  .  .  .  . b.  .  .  .  .  .  .  .  .  

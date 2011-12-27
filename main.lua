@@ -4,13 +4,6 @@ function love.load()
 	love.graphics.setBackgroundColor(30,30,30)
 	love.graphics.setColor(70,70,70,100)
 	love.graphics.setColorMode("replace")
-	rockwall = love.graphics.newImage("rockwall.png")
-	rockwallbg = love.graphics.newImage("rockwallbg.png")
-	slopeleft = love.graphics.newImage("slopeleft.png")
-	sloperight = love.graphics.newImage("sloperight.png")
-	ceilingleft = love.graphics.newImage("ceill.png")
-	ceilingright = love.graphics.newImage("ceilr.png")
-	spikes = love.graphics.newImage("spikes.png")
 	frame = 1
 	animationlengths = {1,6,4,1}
 	music1 = love.audio.newSource("sounds/melody.ogg")
@@ -51,6 +44,16 @@ function love.load()
 	gamestate = "mainmenu"
 end
 
+function loadtiles(dir)
+	rockwall = love.graphics.newImage("editor/tiles/"..dir.."/rockwall.png")
+	rockwallbg = love.graphics.newImage("editor/tiles/"..dir.."/rockwallbg.png")
+	slopeleft = love.graphics.newImage("editor/tiles/"..dir.."/slopeleft.png")
+	sloperight = love.graphics.newImage("editor/tiles/"..dir.."/sloperight.png")
+	ceilingleft = love.graphics.newImage("editor/tiles/"..dir.."/ceill.png")
+	ceilingright = love.graphics.newImage("editor/tiles/"..dir.."/ceilr.png")
+	spikes = love.graphics.newImage("editor/tiles/"..dir.."/spikes.png")
+end
+
 function swapmusic(num)
 	if num == 1 then musicswapspeed = 0.01 end
 	if num == 2 then musicswapspeed = -0.01 end
@@ -65,7 +68,7 @@ function loadlevel(filename)
 	local levelfile = love.filesystem.newFile(filename)
 	levelfile:open("r")
 	local contents = levelfile:read()
-	local a = -1
+	local a = -2
 	for line in contents:lines("\n") do
 		line = line:chomp()
 		if a > 0 then
@@ -80,6 +83,9 @@ function loadlevel(filename)
 				end
 			end
 		else
+			if a == -2 then
+				tileset = line
+			end
 			if a == -1 then
 				if line == "true" then wrap = true else wrap = false end
 			end
@@ -89,6 +95,7 @@ function loadlevel(filename)
 		end
 		a = a + 1
 	end
+	loadtiles(tileset)
 	levelwidth = #level
 	levelheight = #level[1]
 	for a=1,levelwidth do
