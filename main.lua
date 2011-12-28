@@ -28,20 +28,22 @@ function love.load()
 	joystickleft = 2
 	joystickright = 3
 	joystickjump = 8
-	characternames = {"fool","playboy","eccentric","psychopath","liar","traveller","agent","lunatic","hitman","doctor","convict","alcoholic"}
+	characternames = {"playboy","fool","eccentric","psychopath","traveller","liar","agent","lunatic","hitman","doctor","convict","alcoholic"}
 	characternum = 1
 	types = {"ganker","flanker","tanker"}
 	charsprites = {}
+	charbuttons = {}
 	arms = {}
 	for n=1,12 do
 		charsprites[n] = love.graphics.newImage("characters/"..characternames[n]..".png")
+		charbuttons[n] = love.graphics.newImage("characters/buttons/"..characternames[n]..".png")
 		arms[n] = love.graphics.newImage("characters/arms/"..characternames[n]..".png")
 	end
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("fonts/london.ttf",18)
 	love.graphics.setFont(font)
 	leveltoload = 1
-	gamestate = "mainmenu"
+	gamestate = "levelselect"
 end
 
 function loadtiles(dir)
@@ -198,7 +200,7 @@ function love.update(dt)
 		animate(dt)
 		viewport(px,py)
 	end
-	if gamestate == "mainmenu" then
+	if gamestate == "levelselect" then
 		local previouslevel = leveltoload
 		if my > 40 and my < 30+#getlevels()*18 then
 			leveltoload = math.floor((my-22)/18)
@@ -436,7 +438,7 @@ function toRadians(num)
 end
 
 function love.draw()
-	if gamestate == "mainmenu" then
+	if gamestate == "levelselect" then
 		love.graphics.print("pick a level:",2,2)
 		love.graphics.setColor(50,50,50)
 		love.graphics.rectangle("fill",0,22+leveltoload*18,200,18)
@@ -450,7 +452,12 @@ function love.draw()
 		end
 	end
 	if gamestate == "choosecharacter" then
-		love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
+		--love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
+		for b=1,4 do
+			for a=1,3 do
+				love.graphics.draw(charbuttons[b+(4*a)-4],(a-1)*128+320,(b-1)*128+64)
+			end
+		end
 	end
 	if gamestate == "playing" or gamestate == "paused" then
 		love.graphics.draw(background,0,0)
@@ -593,16 +600,6 @@ function deletelastchar(string)
 end
 
 function love.keypressed(key)
-	if key == "left" and gamestate == "choosecharacter" then
-		changecharacter(characternum - 1)
-	end
-	if key == "right" and gamestate == "choosecharacter" then
-		changecharacter(characternum + 1)
-	end
-	if key == " " and gamestate == "choosecharacter" then
-		changecharacter(characternum)
-		gamestate = "playing"
-	end
 	if key == jumpkey and gamestate == "playing" then
 		jumping = true
 	end
@@ -610,7 +607,7 @@ function love.keypressed(key)
 		gamestate = "choosecharacter"
 	end
 	if key == "x" and gamestate == "playing" then
-		gamestate = "mainmenu"
+		gamestate = "levelselect"
 		swapmusic(1)
 	end
 	if key == "escape" or key == "p" then
@@ -622,39 +619,16 @@ function love.keypressed(key)
 	end
 end
 
-function love.joystickpressed(joystick,button)
-	if button == "left" and gamestate == "choosecharacter" then
-		changecharacter(characternum - 1)
-	end
-	if button == "right" and gamestate == "choosecharacter" then
-		changecharacter(characternum + 1)
-	end
-	if button == " " and gamestate == "choosecharacter" then
-		changecharacter(characternum)
-		gamestate = "playing"
-	end
-	if button == jumpkey and gamestate == "playing" then
-		jumping = true
-	end
-	if button == "z" and gamestate == "playing" then
-		gamestate = "choosecharacter"
-	end
-	if button == "x" and gamestate == "playing" then
-		gamestate = "mainmenu"
-	end
-	if button == "escape" or button == "p" then
-		if gamestate == "playing" then
-			gamestate = "paused"
-		elseif gamestate == "paused" then
-			gamestate = "playing"
-		end
-	end
-end
-
 function love.mousepressed(x,y,button)
-	if gamestate == "mainmenu" and button == "l" then
+	if gamestate == "levelselect" and button == "l" then
 		local levelfile = getlevels()[leveltoload]..".txt"
 		loadlevel(levelfile)
 		swapmusic(2)
+	end
+	if gamestate == "choosecharacter" and button == "l" and x > 320 and x < 704 and y > 64 and y < 576 then
+		local a = math.ceil((x-320)/128)
+		local b = math.ceil((y-64)/128)
+		changecharacter(b+(4*a)-4)
+		gamestate = "playing"
 	end
 end

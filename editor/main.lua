@@ -235,6 +235,7 @@ end
 function savelevel(filename)
 	local file = love.filesystem.newFile(filename)
 	file:open("w")
+	file:write(tostring(tileset).."\n")
 	file:write(tostring(wrap).."\n")
 	file:write(background.."\n")
 	for a=1,levelheight do
@@ -440,7 +441,7 @@ function love.keypressed(key)
 	end
 	if key == "c" and state == "editing" then
 		state = "change"
-		fields = {"","","","",""}
+		fields = {tostring(levelwidth),tostring(levelheight),"","",""}
 		fieldnum = 1
 		placeholders = {"__","__","__","__","__"}
 	end
