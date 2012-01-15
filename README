@@ -1,5 +1,5 @@
 This project is powered by love2d, an awesome game library for Lua. To run it, you'll need love2d installed; you can get it from http://love2d.org.
 Then you just need to double-click the .love file (if there is one at this point) or drag the whole folder to the love executable or application. There'll be a standalone executable/application when it's finished.
-This game is being made by me and two other people (who I guess could be classified as the creative director, the artist and the programmer)
+This game is being made by me and two other people (who I guess could be classified as the creative director, the artist and the programmer) EDIT: VitruvianSasquatch is the artist/programmer. Just for clarification...
 Thanks to BlackBulletIV for the immensely useful library 'strong'! (github.com/BlackBulletIV/strong)
 Font is 'London' by François Bruel (and is in the public domain)
