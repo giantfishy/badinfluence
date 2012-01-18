@@ -39,6 +39,9 @@ function love.load()
 		charbuttons[n] = love.graphics.newImage("characters/buttons/"..characternames[n]..".png")
 		arms[n] = love.graphics.newImage("characters/arms/"..characternames[n]..".png")
 	end
+	pistol = love.graphics.newImage("weapons/pistol.png")
+	weapons = {pistol}
+	charselectbg = love.graphics.newImage("gui/characterselect.png")
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("fonts/london.ttf",18)
 	love.graphics.setFont(font)
@@ -452,7 +455,7 @@ function love.draw()
 		end
 	end
 	if gamestate == "choosecharacter" then
-		--love.graphics.print("current class is "..characternames[characternum]..".\nleft and right to change character, space to select character\nthis screen is very much a wip",0,0)
+		love.graphics.draw(charselectbg,0,0)
 		for b=1,4 do
 			for a=1,3 do
 				love.graphics.draw(charbuttons[b+(4*a)-4],(a-1)*128+320,(b-1)*128+64)
@@ -494,6 +497,7 @@ function love.draw()
 			love.graphics.drawq(charsprites[characternum],playerquad,math.floor(px-1-vx+528),math.floor(py-4-vy+320),0,flip,1,16)
 			if animation ~= 4 then
 				love.graphics.draw(arms[characternum],math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,5,2)
+				love.graphics.draw(pistol,math.floor(px+playerWidth/2-flip*5-vx+512),math.floor(py+13-vy+320),armangle,flip,1,3,-18)
 			end
 			if drawmirror then
 				love.graphics.drawq(charsprites[characternum],playerquad,math.floor(mirrorx-1-vx+528),math.floor(mirrory-4-vy+320),0,flip,1,16)
@@ -605,6 +609,7 @@ function love.keypressed(key)
 	end
 	if key == "z" and gamestate == "playing" then
 		gamestate = "choosecharacter"
+		swapmusic(1)
 	end
 	if key == "x" and gamestate == "playing" then
 		gamestate = "levelselect"
@@ -620,15 +625,15 @@ function love.keypressed(key)
 end
 
 function love.mousepressed(x,y,button)
-	if gamestate == "levelselect" and button == "l" then
-		local levelfile = getlevels()[leveltoload]..".txt"
-		loadlevel(levelfile)
-		swapmusic(2)
-	end
 	if gamestate == "choosecharacter" and button == "l" and x > 320 and x < 704 and y > 64 and y < 576 then
 		local a = math.ceil((x-320)/128)
 		local b = math.ceil((y-64)/128)
 		changecharacter(b+(4*a)-4)
 		gamestate = "playing"
+		swapmusic(2)
+	end
+	if gamestate == "levelselect" and button == "l" then
+		local levelfile = getlevels()[leveltoload]..".txt"
+		loadlevel(levelfile)
 	end
 end
