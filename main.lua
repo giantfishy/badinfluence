@@ -269,22 +269,7 @@ function getInput()
 	jumping = false
 end
 
-function hitscan(tipx, tipy, mousex, mousey)
-	local m = (tipy-mousey)/(tipx - mousex)
-	local instance = " "
-	while instance == "empty"
-		
-		local xcell = math.ceil(y/32)
-		local ycell = math.ceil(x/32)
-		if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
-			instance level[xcell][ycell]
-		else
-			if xcell > levelwidth then
-				instance "offlevel"
-			end
-		end
-	end
-end
+
 
 function move(dt)
 	if animation ~= 4 then animation = 1 end
