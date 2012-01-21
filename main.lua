@@ -24,6 +24,7 @@ function love.load()
 	leftkey = "a"
 	rightkey = "d"
 	jumpkey = "w"
+	firekey = "l"
 	usekey = "lshift"
 	joystickleft = 2
 	joystickright = 3
@@ -266,6 +267,23 @@ function getInput()
 		yspeed = yspeed/6
 	end
 	jumping = false
+end
+
+function hitscan(tipx, tipy, mousex, mousey)
+	local m = (tipy-mousey)/(tipx - mousex)
+	local instance = " "
+	while instance == "empty"
+		
+		local xcell = math.ceil(y/32)
+		local ycell = math.ceil(x/32)
+		if xcell < levelwidth+1 and ycell < levelheight+1 and xcell > 0 and ycell > 0 then
+			instance level[xcell][ycell]
+		else
+			if xcell > levelwidth then
+				instance "offlevel"
+			end
+		end
+	end
 end
 
 function move(dt)
