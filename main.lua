@@ -18,13 +18,13 @@ function love.load()
 	vx = 0
 	vy = 0
 	zoom = 2
-	speeds = {6,8,4}
+	speeds = {6,8,4.5}
 	jumpspeed = -10
 	jumping = false
 	leftkey = "a"
 	rightkey = "d"
 	jumpkey = "w"
-	firekey = "l"
+	shootkey = "l"
 	usekey = "lshift"
 	joystickleft = 2
 	joystickright = 3
@@ -34,6 +34,7 @@ function love.load()
 	types = {"ganker","flanker","tanker"}
 	charsprites = {}
 	charbuttons = {}
+	bullets = {}
 	arms = {}
 	for n=1,12 do
 		charsprites[n] = love.graphics.newImage("characters/"..characternames[n]..".png")
@@ -42,6 +43,7 @@ function love.load()
 	end
 	pistol = love.graphics.newImage("weapons/pistol.png")
 	weapons = {pistol}
+	weaponstats = {{"projectile",10,16}}
 	charselectbg = love.graphics.newImage("gui/characterselect.png")
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("fonts/london.ttf",18)
@@ -201,6 +203,7 @@ function love.update(dt)
 		getInput()
 		move(dt)
 		manifestGravity()
+		updateBullets(16)
 		animate(dt)
 		viewport(px,py)
 	end
@@ -266,10 +269,25 @@ function getInput()
 	if not love.keyboard.isDown(jumpkey) and yspeed < 0 then
 		yspeed = yspeed/6
 	end
+	weaponcooldown = weaponcooldown - 1
+	output = "number of bullets:"..#bullets
+	if gamestate == "playing" and love.mouse.isDown(shootkey) and weaponcooldown < 0 then
+		local guntipx = px+16
+		local guntipy = py+8
+		if weapontype == "projectile" then
+			local distance = math.sqrt((mx-px)^2+(my-py)^2)
+			local xspeed = (mx-px)/distance*weaponstats[selectedweapon][3]
+			local yspeed = (my-py)/distance*weaponstats[selectedweapon][3]
+			fireweapon(selectedweapon,guntipx,guntipy,xspeed,yspeed)
+		else
+			local gradient = (my-guntipy)/(mx-guntipx)
+			local direction = "left"
+			if mx > guntipx then direction = "right" end
+		end
+		weaponcooldown = weaponcooldowntime
+	end
 	jumping = false
 end
-
-
 
 function move(dt)
 	if animation ~= 4 then animation = 1 end
@@ -406,6 +424,25 @@ function manifestGravity()
 	end
 end
 
+function updateBullets(accuracy)
+	for b=1,#bullets do
+		if b < #bullets+1 then -- so that removing an entity from the list doesn't cause problems
+			--bullets are listed by weapon number, x, y, xspeed, yspeed
+			local delete = false
+			local xspeed = bullets[b][4]/accuracy
+			local yspeed = bullets[b][5]/accuracy
+			for n=1,accuracy do
+				bullets[b][2] = bullets[b][2] + bullets[b][4]
+				bullets[b][3] = bullets[b][3] + bullets[b][5]
+				if levelat(bullets[b][2],bullets[b][3]) ~= 0 then
+					delete = true
+				end
+			end
+			if delete then table.remove(bullets,b) end
+		end
+	end
+end
+
 function animate(dt)
 	playerquad = love.graphics.newQuad((math.floor(frame)-1)*32,(animation-1)*64,32,64,192,256)
 	viewport(px,py)
@@ -444,6 +481,7 @@ function toRadians(num)
 end
 
 function love.draw()
+	love.graphics.setColor(70,70,70,100)
 	if gamestate == "levelselect" then
 		love.graphics.print("pick a level:",2,2)
 		love.graphics.setColor(50,50,50)
@@ -486,6 +524,12 @@ function love.draw()
 				end
 			end
 		end
+		for b=1,#bullets do
+			local x = bullets[b][2]
+			local y = bullets[b][3]
+			love.graphics.setColor(255,255,255)
+			love.graphics.line(x-vx+512,y-vy+320,x-bullets[b][4]*4-vx+512,y-bullets[b][5]*4-vy+320)
+		end
 		local flip = 1
 		if direction == "left" then flip = -1 end
 		local flash = math.floor(invincibletimer/6)
@@ -518,7 +562,6 @@ function love.draw()
 			love.graphics.setColor(255,255,100,100)
 			love.graphics.rectangle("fill",px-1-vx+512,py-9-vy+320,cooldown/maxcooldown*(playerWidth+2),6)
 		end
-		love.graphics.setColor(70,70,70,100)
 		love.graphics.print("class: "..characternames[characternum].."\ntype: "..types[charactertype],0,0)
 		if output then love.graphics.print(output,0,40) end
 	end
@@ -570,9 +613,6 @@ function changecharacter(newnum)
 	characternum = newnum
 	charactertype = math.ceil(characternum/4)
 	speed = speeds[charactertype]
-	if characternames[characternum] == "doctor" then
-		speed = speed + 1
-	end
 	math.randomseed(os.time())
 	math.random();math.random();math.random()
 	local n = math.random(1,#spawnpoints)
@@ -591,6 +631,10 @@ function changecharacter(newnum)
 	if charactertype == 3 then maxhealth = 150 end
 	health = maxhealth
 	setinvincible(100)
+	selectedweapon = 1
+	weapontype = weaponstats[selectedweapon][1]
+	weaponcooldowntime = weaponstats[selectedweapon][2]
+	weaponcooldown = weaponcooldowntime
 end
 
 function deletelastchar(string)
@@ -625,6 +669,10 @@ function love.keypressed(key)
 			gamestate = "playing"
 		end
 	end
+end
+
+function fireweapon(weapon,ox,oy,xspeed,yspeed)
+	table.insert(bullets,{weapon,ox,oy,xspeed,yspeed})
 end
 
 function love.mousepressed(x,y,button)
