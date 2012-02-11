@@ -43,7 +43,7 @@ function love.load()
 	end
 	pistol = love.graphics.newImage("weapons/pistol.png")
 	weapons = {pistol}
-	weaponstats = {{"projectile",10,16}}
+	weaponstats = {{"projectile",10,2}}
 	charselectbg = love.graphics.newImage("gui/characterselect.png")
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("fonts/london.ttf",18)
@@ -206,6 +206,7 @@ function love.update(dt)
 		updateBullets(16)
 		animate(dt)
 		viewport(px,py)
+		output = vx..", "..vy
 	end
 	if gamestate == "levelselect" then
 		local previouslevel = leveltoload
@@ -270,14 +271,14 @@ function getInput()
 		yspeed = yspeed/6
 	end
 	weaponcooldown = weaponcooldown - 1
-	output = "number of bullets:"..#bullets
 	if gamestate == "playing" and love.mouse.isDown(shootkey) and weaponcooldown < 0 then
 		local guntipx = px+16
 		local guntipy = py+8
 		if weapontype == "projectile" then
-			local distance = math.sqrt((mx-px)^2+(my-py)^2)
-			local xspeed = (mx-px)/distance*weaponstats[selectedweapon][3]
-			local yspeed = (my-py)/distance*weaponstats[selectedweapon][3]
+			local distance = math.sqrt((mx+vx-512-px)^2+(my+vy-320-py)^2)
+			local xspeed = (mx+vx-512-px)/distance*weaponstats[selectedweapon][3]
+			local yspeed = (my+vy-320-py)/distance*weaponstats[selectedweapon][3]
+			output = distance
 			fireweapon(selectedweapon,guntipx,guntipy,xspeed,yspeed)
 		else
 			local gradient = (my-guntipy)/(mx-guntipx)
@@ -566,6 +567,7 @@ function love.draw()
 		if output then love.graphics.print(output,0,40) end
 	end
 	if gamestate == "paused" then
+		love.graphics.setColor(70,70,70,100)
 		love.graphics.rectangle("fill",0,0,love.graphics.getWidth(),love.graphics.getHeight())
 		love.graphics.printf("PAUSED",0,love.graphics.getHeight()/2,love.graphics.getWidth(),"center")
 	end
