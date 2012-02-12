@@ -43,7 +43,7 @@ function love.load()
 	end
 	pistol = love.graphics.newImage("weapons/pistol.png")
 	weapons = {pistol}
-	weaponstats = {{"projectile",10,2}}
+	weaponstats = {{"projectile",10,10}}
 	charselectbg = love.graphics.newImage("gui/characterselect.png")
 	types = {"ganker","flanker","tanker"}
 	font = love.graphics.newFont("fonts/london.ttf",18)
@@ -206,7 +206,6 @@ function love.update(dt)
 		updateBullets(16)
 		animate(dt)
 		viewport(px,py)
-		output = vx..", "..vy
 	end
 	if gamestate == "levelselect" then
 		local previouslevel = leveltoload
@@ -275,10 +274,10 @@ function getInput()
 		local guntipx = px+16
 		local guntipy = py+8
 		if weapontype == "projectile" then
-			local distance = math.sqrt((mx+vx-512-px)^2+(my+vy-320-py)^2)
+			local distance = math.sqrt((mx+vx-512-px)^2+(my+vy-320-py)^2)*2
 			local xspeed = (mx+vx-512-px)/distance*weaponstats[selectedweapon][3]
 			local yspeed = (my+vy-320-py)/distance*weaponstats[selectedweapon][3]
-			output = distance
+			output = xspeed
 			fireweapon(selectedweapon,guntipx,guntipy,xspeed,yspeed)
 		else
 			local gradient = (my-guntipy)/(mx-guntipx)
